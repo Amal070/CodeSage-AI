@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Certificate Verification - CertiVault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #00d4ff;
+            --secondary: #7b2cbf;
+            --accent: #00ff88;
+            --dark: #0a0a0f;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --success: #00ff88;
+            --error: #ff4757;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--dark);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Animated AI Background */
+        .ai-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .ai-bg::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(123, 44, 191, 0.08) 0%, transparent 50%);
+            animation: bgPulse 15s ease-in-out infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
+        }
+
+        /* Neural Network Animation */
+        .neural-network {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0.3;
+        }
+
+        .node {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: nodePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes nodePulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.5); opacity: 1; }
+        }
+
+        .connection {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            transform-origin: left center;
+            animation: connectionFlow 3s linear infinite;
+        }
+
+        @keyframes connectionFlow {
+            0% { opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { opacity: 0; }
+        }
+
+        /* Header */
+        .header {
+            background: rgba(10, 10, 15, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 22px;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--dark);
+            font-size: 18px;
+        }
+
+        .logo span {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #0099cc);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -10px rgba(0, 212, 255, 0.5);
+        }
+
+        .btn-outline {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .main {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 60px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-title {
+            text-align: center;
+            font-size: clamp(28px, 5vw, 42px);
+            font-weight: 800;
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .page-subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(123, 44, 191, 0.1));
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 50px;
+            font-size: 13px;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .ai-badge i {
+            animation: aiPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes aiPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Card */
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(20px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .card-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 255, 136, 0.1));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 24px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .card-desc {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            padding: 60px 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .upload-area:hover::before {
+            left: 100%;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .upload-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 255, 136, 0.2));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+            color: var(--primary);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .upload-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .upload-subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 16px;
+        }
+
+        .format-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--primary);
+        }
+
+        .file-input { display: none; }
+
+        .selected-file {
+            display: none;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 16px;
+            margin-top: 20px;
+        }
+
+        .selected-file.active { display: flex; }
+
+        .file-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent), #00cc6a);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--dark);
+            font-size: 20px;
+        }
+
+        .file-info { flex: 1; }
+
+        .file-name {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .file-size {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .remove-file {
+            width: 36px;
+            height: 36px;
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.5);
+            transition: all 0.2s;
+        }
+
+        .remove-file:hover {
+            background: rgba(255, 71, 87, 0.2);
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px 24px;
+            background: linear-gradient(135deg, var(--primary), #0099cc);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 24px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px -15px rgba(0, 212, 255, 0.5);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* AI Loading Animation */
+        .loading-container {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-container.active {
+            display: block;
+        }
+
+        .ai-scanner {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+
+        .scanner-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid transparent;
+            border-radius: 50%;
+            animation: scannerExpand 2s ease-out infinite;
+        }
+
+        .scanner-ring:nth-child(1) {
+            width: 50px;
+            height: 50px;
+            border-color: var(--primary);
+            animation-delay: 0s;
+        }
+
+        .scanner-ring:nth-child(2) {
+            width: 100px;
+            height: 100px;
+            border-color: var(--secondary);
+            animation-delay: 0.5s;
+        }
+
+        .scanner-ring:nth-child(3) {
+            width: 150px;
+            height: 150px;
+            border-color: var(--accent);
+            animation-delay: 1s;
+        }
+
+        @keyframes scannerExpand {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        .scanner-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            animation: corePulse 1s ease-in-out infinite;
+        }
+
+        @keyframes corePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.5); }
+            50% { box-shadow: 0 0 0 20px rgba(0, 212, 255, 0); }
+        }
+
+        .scanner-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            animation: scanLine 2s linear infinite;
+        }
+
+        @keyframes scanLine {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        .loading-title {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .loading-text {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 15px;
+            margin-bottom: 30px;
+        }
+
+        .ai-status {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .status-chip {
+            padding: 10px 20px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            transition: all 0.3s ease;
+        }
+
+        .status-chip.active {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 255, 136, 0.2));
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .status-chip i {
+            margin-right: 6px;
+        }
+
+        /* Result */
+        .result-container { display: none; }
+
+        .result-container.active {
+            display: block;
+            animation: resultSlide 0.5s ease;
+        }
+
+        @keyframes resultSlide {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-card {
+            border-radius: 24px;
+            padding: 48px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-card.valid {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.1));
+            border: 2px solid var(--success);
+        }
+
+        .result-card.invalid {
+            background: linear-gradient(135deg, rgba(255, 71, 87, 0.1), rgba(123, 44, 191, 0.1));
+            border: 2px solid var(--error);
+        }
+
+        .result-card.valid::before,
+        .result-card.invalid::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(0, 255, 136, 0.1), transparent);
+            animation: resultRotate 4s linear infinite;
+        }
+
+        .result-card.invalid::before {
+            background: conic-gradient(from 0deg, transparent, rgba(255, 71, 87, 0.1), transparent);
+        }
+
+        @keyframes resultRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .result-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 42px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .result-card.valid .result-icon {
+            background: linear-gradient(135deg, var(--success), #00cc6a);
+            color: var(--dark);
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.4);
+        }
+
+        .result-card.invalid .result-icon {
+            background: linear-gradient(135deg, var(--error), #cc3344);
+            color: white;
+            box-shadow: 0 0 40px rgba(255, 71, 87, 0.4);
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        .result-title {
+            font-size: 28px;
+            font-weight: 800;
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .result-card.valid .result-title { color: var(--success); }
+        .result-card.invalid .result-title { color: var(--error); }
+
+        .result-message {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 32px;
+            font-size: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .verification-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            font-size: 13px;
+            color: var(--primary);
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Details Table */
+        .details-table {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            overflow: hidden;
+            text-align: left;
+            position: relative;
+            z-index: 1;
+        }
+
+        .detail-row {
+            display: flex;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .detail-row:last-child { border-bottom: none; }
+
+        .detail-label {
+            width: 160px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .detail-value {
+            flex: 1;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 16px;
+            margin-top: 32px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .result-actions .btn { flex: 1; justify-content: center; }
+
+        /* Info Section */
+        .info-section {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            backdrop-filter: blur(20px);
+        }
+
+        .info-title {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .step-item {
+            text-align: center;
+            padding: 24px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .step-item:hover {
+            background: rgba(0, 212, 255, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .step-number {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            margin: 0 auto 16px;
+        }
+
+        .step-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .step-desc {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .header-content { flex-direction: column; gap: 16px; }
+            .steps-grid { grid-template-columns: repeat(2, 1fr); }
+            .result-actions { flex-direction: column; }
+            .detail-row { flex-direction: column; gap: 8px; }
+            .detail-label { width: 100%; }
+            .card { padding: 24px; }
+            .result-card { padding: 32px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- AI Background -->
+    <div class="ai-bg">
+        <div class="neural-network" id="neuralNetwork"></div>
+    </div>
+
+    <header class="header">
+        <div class="header-content">
+            <a href="{% url 'user_dashboard' %}" class="logo">
+                <div class="logo-icon"><i class="fas fa-link"></i></div>
+                <span>CertiVault</span>
+            </a>
+            <nav class="header-nav">
+                <a href="{% url 'user_dashboard' %}" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i> Dashboard
+                </a>
+                <div class="user-menu">
+                    <div class="user-avatar">{{ request.user.username|make_list|first|upper }}</div>
+                    <span>{{ request.user.username }}</span>
+                </div>
+                <a href="{% url 'logout' %}" class="btn btn-outline">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="ai-badge">
+            <i class="fas fa-brain"></i>
+            AI-Powered Verification
+        </div>
+        
+        <h1 class="page-title">Verify Certificate</h1>
+        <p class="page-subtitle">Advanced AI detection with blockchain-backed verification</p>
+
+        <div class="card" id="upload-card">
+            <div class="card-header">
+                <div class="card-icon"><i class="fas fa-file-upload"></i></div>
+                <div>
+                    <h2 class="card-title">Upload Certificate</h2>
+                    <p class="card-desc">AI will analyze and verify authenticity against blockchain records</p>
+                </div>
+            </div>
+
+            <form method="POST" enctype="multipart/form-data" id="verify-form">
+                {% csrf_token %}
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <h3 class="upload-title">Drop your certificate here</h3>
+                    <p class="upload-subtitle">or click to browse from your computer</p>
+                    <span class="format-badge">PDF Format</span>
+                    <input type="file" name="certificate" id="certificate-input" class="file-input" accept=".pdf,.jpg,.jpeg,.png">
+                </div>
+                <div class="selected-file" id="selected-file">
+                    <div class="file-icon"><i class="fas fa-file-pdf"></i></div>
+                    <div class="file-info">
+                        <div class="file-name" id="file-name">certificate.pdf</div>
+                        <div class="file-size" id="file-size">125 KB</div>
+                    </div>
+                    <button type="button" class="remove-file" id="remove-file"><i class="fas fa-times"></i></button>
+                </div>
+                <button type="submit" class="submit-btn" id="submit-btn" disabled>
+                    <i class="fas fa-robot"></i> AI Verify Certificate
+                </button>
+            </form>
+        </div>
+
+        <!-- AI Loading -->
+        <div class="loading-container" id="loading">
+            <div class="ai-scanner">
+                <div class="scanner-ring"></div>
+                <div class="scanner-ring"></div>
+                <div class="scanner-ring"></div>
+                <div class="scanner-core"><i class="fas fa-brain"></i></div>
+                <div class="scanner-line"></div>
+            </div>
+            <h3 class="loading-title">AI is Analyzing...</h3>
+            <p class="loading-text">Our neural network is verifying certificate authenticity</p>
+            <div class="ai-status">
+                <span class="status-chip" id="step1"><i class="fas fa-upload"></i> Uploading</span>
+                <span class="status-chip" id="step2"><i class="fas fa-fingerprint"></i> Hashing</span>
+                <span class="status-chip" id="step3"><i class="fas fa-brain"></i> AI Analysis</span>
+                <span class="status-chip" id="step4"><i class="fas fa-database"></i> Blockchain</span>
+            </div>
+        </div>
+
+        <!-- Result -->
+        <div class="result-container" id="result">
+            {% if result %}
+            <div class="result-card {% if result == 'VALID' %}valid{% else %}invalid{% endif %}">
+                {% if result == 'VALID' %}
+                    <div class="result-icon"><i class="fas fa-check"></i></div>
+                    <div class="verification-badge">
+                        <i class="fas fa-shield-alt"></i>
+                        Blockchain Verified
+                    </div>
+                    <h2 class="result-title">Certificate is Authentic</h2>
+                    <p class="result-message">AI analysis confirms this certificate is genuine and matches blockchain records.</p>
+                    
+                    {% if certificate_type == 'institute' and certificate %}
+                    <div class="details-table">
+                        <div class="detail-row"><span class="detail-label">Student Name</span><span class="detail-value">{{ certificate.student_name }}</span></div>
+                        <div class="detail-row"><span class="detail-label">Register Number</span><span class="detail-value">{{ certificate.register_number|default:"N/A" }}</span></div>
+                        <div class="detail-row"><span class="detail-label">Course</span><span class="detail-value">{{ certificate.course }}</span></div>
+                        <div class="detail-row"><span class="detail-label">Year of Passing</span><span class="detail-value">{{ certificate.year_of_passing|default:"N/A" }}</span></div>
+                        <div class="detail-row"><span class="detail-label">Issued By</span><span class="detail-value">{{ certificate.institute.username }}</span></div>
+                        <div class="detail-row"><span class="detail-label">Issue Date</span><span class="detail-value">{{ certificate.created_at|date:"Y-m-d" }}</span></div>
+                        <div class="detail-row"><span class="detail-label">Certificate Hash</span><span class="detail-value">{{ certificate.certificate_hash|truncatechars:25 }}...</span></div>
+                        {% if certificate.blockchain_tx_hash %}
+                        <div class="detail-row"><span class="detail-label">Blockchain TX</span><span class="detail-value">{{ certificate.blockchain_tx_hash|truncatechars:25 }}...</span></div>
+                        {% endif %}
+                    </div>
+                    {% elif certificate_type == 'student' and certificate %}
+                    <div class="details-table">
+                        <div class="detail-row"><span class="detail-label">Student Name</span><span class="detail-value">{{ certificate.student.full_name }}</span></div>
+                        <div class="detail-row"><span class="detail-label">Student ID</span><span class="detail-value">{{ certificate.student.student_id }}</span></div>
+                        <div class="detail-row"><span class="detail-label">Course</span><span class="detail-value">{{ certificate.course.course_name }}</span></div>
+                        <div class="detail-row"><span class="detail-label">Institute</span><span class="detail-value">{{ certificate.institute.institute_name }}</span></div>
+                        <div class="detail-row"><span class="detail-label">Marks</span><span class="detail-value">{{ certificate.marks }}</span></div>
+                        <div class="detail-row"><span class="detail-label">Completion Date</span><span class="detail-value">{{ certificate.completion_date|default:"N/A" }}</span></div>
+                        <div class="detail-row"><span class="detail-label">Issue Date</span><span class="detail-value">{{ certificate.created_at|date:"Y-m-d" }}</span></div>
+                        {% if certificate.blockchain_tx_hash %}
+                        <div class="detail-row"><span class="detail-label">Blockchain TX</span><span class="detail-value">{{ certificate.blockchain_tx_hash|truncatechars:25 }}...</span></div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="details-table">
+                        <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">Certificate verified on blockchain but details not found in database.</span></div>
+                    </div>
+                    {% endif %}
+                {% elif result == 'INVALID' %}
+                    <div class="result-icon"><i class="fas fa-times"></i></div>
+                    <div class="verification-badge" style="color: var(--error); border-color: var(--error);">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Not Verified
+                    </div>
+                    <h2 class="result-title">Certificate is Invalid</h2>
+                    <p class="result-message">AI detection indicates this certificate may be counterfeit or has been altered. Not found in blockchain records.</p>
+                {% else %}
+                    <div class="result-icon"><i class="fas fa-exclamation-circle"></i></div>
+                    <h2 class="result-title">Verification Error</h2>
+                    <p class="result-message">{{ result }}</p>
+                {% endif %}
+
+                <div class="result-actions">
+                    <a href="{% url 'verify_certificate' %}" class="btn btn-primary"><i class="fas fa-redo"></i> Verify Another</a>
+                    <a href="{% url 'user_dashboard' %}" class="btn btn-outline"><i class="fas fa-home"></i> Go to Dashboard</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Info Section -->
+        <div class="info-section">
+            <h2 class="info-title">How AI Verification Works</h2>
+            <div class="steps-grid">
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <h4 class="step-title">Upload</h4>
+                    <p class="step-desc">Select certificate file</p>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <h4 class="step-title">Hash</h4>
+                    <p class="step-desc">Generate fingerprint</p>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <h4 class="step-title">AI Analyze</h4>
+                    <p class="step-desc">ML forgery detection</p>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <h4 class="step-title">Verify</h4>
+                    <p class="step-desc">Blockchain confirmation</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 CertiVault - AI-Powered Blockchain Certificate Verification</p>
+    </footer>
+
+    <script>
+        // Neural Network Animation
+        function createNeuralNetwork() {
+            const container = document.getElementById('neuralNetwork');
+            const nodeCount = 20;
+            
+            for (let i = 0; i < nodeCount; i++) {
+                const node = document.createElement('div');
+                node.className = 'node';
+                node.style.left = Math.random() * 100 + '%';
+                node.style.top = Math.random() * 100 + '%';
+                node.style.animationDelay = Math.random() * 2 + 's';
+                container.appendChild(node);
+            }
+        }
+        
+        createNeuralNetwork();
+
+        // File Upload Handling
+        const uploadArea = document.getElementById('upload-area');
+        const certificateInput = document.getElementById('certificate-input');
+        const selectedFile = document.getElementById('selected-file');
+        const fileName = document.getElementById('file-name');
+        const fileSize = document.getElementById('file-size');
+        const removeFile = document.getElementById('remove-file');
+        const submitBtn = document.getElementById('submit-btn');
+        const verifyForm = document.getElementById('verify-form');
+        const uploadCard = document.getElementById('upload-card');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+
+        uploadArea.addEventListener('click', () => certificateInput.click());
+
+        certificateInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                fileName.textContent = file.name;
+                fileSize.textContent = formatFileSize(file.size);
+                selectedFile.classList.add('active');
+                submitBtn.disabled = false;
+            }
+        });
+
+        removeFile.addEventListener('click', () => {
+            certificateInput.value = '';
+            selectedFile.classList.remove('active');
+            submitBtn.disabled = true;
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--primary)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = 'rgba(0, 212, 255, 0.3)';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'rgba(0, 212, 255, 0.3)';
+            
+            if (e.dataTransfer.files.length > 0) {
+                certificateInput.files = e.dataTransfer.files;
+                const file = e.dataTransfer.files[0];
+                fileName.textContent = file.name;
+                fileSize.textContent = formatFileSize(file.size);
+                selectedFile.classList.add('active');
+                submitBtn.disabled = false;
+            }
+        });
+
+        verifyForm.addEventListener('submit', (e) => {
+            uploadCard.style.display = 'none';
+            loading.classList.add('active');
+            animateSteps();
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if result %}
+                uploadCard.style.display = 'none';
+                result.classList.add('active');
+            {% endif %}
+        });
+
+        function animateSteps() {
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+            let currentStep = 0;
+
+            const interval = setInterval(() => {
+                if (currentStep > 0) {
+                    document.getElementById(steps[currentStep - 1]).classList.remove('active');
+                }
+                
+                if (currentStep < steps.length) {
+                    document.getElementById(steps[currentStep]).classList.add('active');
+                }
+                
+                currentStep++;
+                
+                if (currentStep >= steps.length) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        loading.classList.remove('active');
+                        result.classList.add('active');
+                    }, 1000);
+                }
+            }, 1000);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
+

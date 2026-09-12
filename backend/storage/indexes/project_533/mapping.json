@@ -1,0 +1,11 @@
+{
+  "project_id": 533,
+  "vector_count": 1,
+  "dimension": 768,
+  "index_type": "IndexFlatIP",
+  "metric": "cosine_similarity",
+  "created_at": "2026-09-12T17:22:28.587027+00:00",
+  "id_to_chunk": {
+    "0": "p533_calc.py_c0001_de312200"
+  }
+}

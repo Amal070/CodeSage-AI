@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - CertiVault</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        /* Top Navigation */
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .logo span {
+            color: #c0392b;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .admin-icon {
+            width: 40px;
+            height: 40px;
+            background: #c0392b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            padding: 8px 20px;
+            background: #c0392b;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .logout-btn:hover {
+            background: #a93226;
+            transform: translateY(-2px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 70px;
+            width: 260px;
+            height: calc(100vh - 70px);
+            background: white;
+            padding: 20px 0;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            margin: 5px 0;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 25px;
+            color: #555;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background: #ffebee;
+            color: #c0392b;
+            border-left: 4px solid #c0392b;
+        }
+
+        .sidebar-menu i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            margin-top: 70px;
+            padding: 30px;
+            min-height: calc(100vh - 70px);
+        }
+
+        .dashboard-header {
+            margin-bottom: 30px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 28px;
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        /* Alert Box */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            color: #2e7d32;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            border-left: 4px solid #c0392b;
+            color: #c0392b;
+        }
+
+        .alert i {
+            font-size: 20px;
+        }
+
+        /* Stats Cards */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #c0392b;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            background: #ffebee;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #c0392b;
+        }
+
+        .stat-info h3 {
+            font-size: 14px;
+            color: #777;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .stat-info .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        /* Section */
+        .section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #eee;
+            background: #ffebee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-header h2 {
+            font-size: 20px;
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        .section-content {
+            padding: 25px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th {
+            background: #f5f5f5;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            color: #555;
+        }
+
+        table tr:hover {
+            background: #fafafa;
+        }
+
+        .status-badge {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fff3e0;
+            color: #ff9800;
+        }
+
+        .status-approved {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .status-rejected {
+            background: #ffebee;
+            color: #c0392b;
+        }
+
+        .status-completed {
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+
+        .action-btn {
+            padding: 6px 15px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            text-decoration: none;
+            margin-right: 5px;
+        }
+
+        .approve-btn {
+            background: #4caf50;
+            color: white;
+        }
+
+        .approve-btn:hover {
+            background: #43a047;
+        }
+
+        .reject-btn {
+            background: #c0392b;
+            color: white;
+        }
+
+        .reject-btn:hover {
+            background: #a93226;
+        }
+
+        /* No Data */
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #777;
+        }
+
+        .no-data i {
+            font-size: 48px;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar-menu a span {
+                display: none;
+            }
+            
+            .sidebar-menu a {
+                justify-content: center;
+                padding: 15px;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <nav class="navbar">
+        <div class="logo">Certi<span>Vault</span> Admin</div>
+        <div class="navbar-right">
+            <div class="user-info">
+                <span class="user-name">{{ user.username }}</span>
+                <div class="admin-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+            </div>
+            <a href="{% url 'logout' %}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <ul class="sidebar-menu">
+            <li><a href="#" class="active"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+            <li><a href="#institutes"><i class="fas fa-university"></i> <span>Institute Requests</span></a></li>
+            <li><a href="#enrollments"><i class="fas fa-user-graduate"></i> <span>Enrollments</span></a></li>
+            <li><a href="#certificates"><i class="fas fa-certificate"></i> <span>Certificate Requests</span></a></li>
+            <li><a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="dashboard-header">
+            <h1>Admin Dashboard</h1>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+                <i class="fas fa-info-circle"></i>
+                {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Stats Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-university"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Total Institutes</h3>
+                    <div class="stat-number">{{ total_institutes }}</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Pending Institutes</h3>
+                    <div class="stat-number">{{ pending_institutes }}</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Total Students</h3>
+                    <div class="stat-number">{{ total_students }}</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-file-signature"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Pending Certificates</h3>
+                    <div class="stat-number">{{ pending_cert_requests }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Institute Requests Section -->
+        <div class="section" id="institutes">
+            <div class="section-header">
+                <h2><i class="fas fa-university"></i> Institute Registration Requests</h2>
+            </div>
+            <div class="section-content">
+                {% if recent_institutes %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Institute Name</th>
+                            <th>Code</th>
+                            <th>Admin Name</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for institute in recent_institutes %}
+                        <tr>
+                            <td>{{ institute.institute_name }}</td>
+                            <td>{{ institute.institute_code }}</td>
+                            <td>{{ institute.admin_name }}</td>
+                            <td>{{ institute.email }}</td>
+                            <td>
+                                <span class="status-badge status-{{ institute.status|lower }}">
+                                    {{ institute.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if institute.status == 'Pending' %}
+                                <a href="{% url 'approve_institute' institute.id 'approve' %}" class="action-btn approve-btn">
+                                    <i class="fas fa-check"></i> Approve
+                                </a>
+                                <a href="{% url 'approve_institute' institute.id 'reject' %}" class="action-btn reject-btn">
+                                    <i class="fas fa-times"></i> Reject
+                                </a>
+                                {% else %}
+                                <span style="color: #777; font-size: 12px;">{{ institute.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-data">
+                    <i class="fas fa-university"></i>
+                    <p>No institute registrations yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Enrollments Section -->
+        <div class="section" id="enrollments">
+            <div class="section-header">
+                <h2><i class="fas fa-user-graduate"></i> Recent Enrollments</h2>
+            </div>
+            <div class="section-content">
+                {% if recent_enrollments %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Course</th>
+                            <th>Institute</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enrollment in recent_enrollments %}
+                        <tr>
+                            <td>{{ enrollment.student.full_name }}</td>
+                            <td>{{ enrollment.course.course_name }}</td>
+                            <td>{{ enrollment.institute.institute_name }}</td>
+                            <td>
+                                <span class="status-badge status-{{ enrollment.status|lower }}">
+                                    {{ enrollment.status }}
+                                </span>
+                            </td>
+                            <td>{{ enrollment.request_date|date:"d M Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-data">
+                    <i class="fas fa-user-graduate"></i>
+                    <p>No enrollments yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Certificate Requests Section -->
+        <div class="section" id="certificates">
+            <div class="section-header">
+                <h2><i class="fas fa-certificate"></i> Recent Certificate Requests</h2>
+            </div>
+            <div class="section-content">
+                {% if recent_cert_requests %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Course</th>
+                            <th>Institute</th>
+                            <th>Status</th>
+                            <th>Request Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in recent_cert_requests %}
+                        <tr>
+                            <td>{{ req.enrollment.student.full_name }}</td>
+                            <td>{{ req.enrollment.course.course_name }}</td>
+                            <td>{{ req.enrollment.institute.institute_name }}</td>
+                            <td>
+                                <span class="status-badge status-{{ req.status|lower }}">
+                                    {{ req.status }}
+                                </span>
+                            </td>
+                            <td>{{ req.request_date|date:"d M Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-data">
+                    <i class="fas fa-certificate"></i>
+                    <p>No certificate requests yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
+

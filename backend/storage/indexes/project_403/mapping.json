@@ -1,0 +1,17 @@
+{
+  "project_id": 403,
+  "vector_count": 7,
+  "dimension": 768,
+  "index_type": "IndexFlatIP",
+  "metric": "cosine_similarity",
+  "created_at": "2026-09-12T10:06:16.323639+00:00",
+  "id_to_chunk": {
+    "0": "p403_backend_app_auth.py_c0001_840ca6e9",
+    "1": "p403_backend_app_auth.py_c0002_73fabd18",
+    "2": "p403_backend_app_auth.py_c0003_f7a0cd5a",
+    "3": "p403_backend_app_database.py_c0001_d5a79e6e",
+    "4": "p403_backend_app_database.py_c0002_33d99372",
+    "5": "p403_frontend_src_Dashboard.jsx_c0001_78cac935",
+    "6": "p403_frontend_src_Dashboard.jsx_c0002_34bdd538"
+  }
+}

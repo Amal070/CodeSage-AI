@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Institute Registration - CertiVault</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 800px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .logo a {
+            font-size: 32px;
+            font-weight: 700;
+            color: #00d4ff;
+            text-decoration: none;
+        }
+
+        h2 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 5px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            color: #00ff88;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: "";
+            width: 4px;
+            height: 20px;
+            background: #00ff88;
+            border-radius: 2px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            color: #aaa;
+            font-size: 13px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: #666;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #00ff88;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23aaa' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            padding: 12px;
+        }
+
+        .credentials-section {
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .credentials-section .section-title {
+            color: #00d4ff;
+            border-bottom-color: rgba(0, 212, 255, 0.3);
+        }
+
+        .credentials-section .section-title::before {
+            background: #00d4ff;
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #0f0c29;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 255, 136, 0.4);
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .back-link a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link a:hover {
+            color: #00ff88;
+        }
+
+        .back-home {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        .back-home a {
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .back-home a:hover {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .info-box {
+            background: rgba(255, 200, 0, 0.1);
+            border: 1px solid rgba(255, 200, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .info-box svg {
+            width: 24px;
+            height: 24px;
+            fill: #ffc800;
+            flex-shrink: 0;
+        }
+
+        .info-box p {
+            color: #ffc800;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* Course Entry Styles */
+        .course-entry {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .course-entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .course-number {
+            color: #00ff88;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .remove-course-btn {
+            background: rgba(255, 82, 82, 0.2);
+            border: 1px solid #ff5252;
+            color: #ff5252;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .remove-course-btn:hover {
+            background: #ff5252;
+            color: white;
+        }
+
+        .course-fields {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+        }
+
+        .add-course-btn {
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px dashed rgba(0, 255, 136, 0.5);
+            color: #00ff88;
+            padding: 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            width: 100%;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .add-course-btn:hover {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+        }
+
+        .no-courses-message {
+            color: #888;
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 25px;
+            }
+
+            .course-fields {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="back-home">
+    <a href="/">← Back to Home</a>
+</div>
+
+<div class="container">
+    <div class="logo">
+        <a href="/">🔗 CertiVault</a>
+    </div>
+    
+    <h2>Institute Registration</h2>
+    <p class="subtitle">Register your institution to issue certificates</p>
+
+    <div class="info-box">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        <p>All fields marked with * are required. Your registration will be reviewed by our team before approval.</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="registrationForm">
+        {% csrf_token %}
+        
+        <!-- Institute Information -->
+        <div class="form-section">
+            <h3 class="section-title">Institute Information</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Institute Name *</label>
+                    <input type="text" name="institute_name" placeholder="Enter institute name" required>
+                </div>
+                <div class="form-group">
+                    <label>Institute Code *</label>
+                    <input type="text" name="institute_code" placeholder="Enter unique institute code" required>
+                </div>
+                <div class="form-group">
+                    <label>Affiliation *</label>
+                    <input type="text" name="affiliation" placeholder="e.g., University, Board, Council" required>
+                </div>
+                <div class="form-group">
+                    <label>Type *</label>
+                    <select name="type" required>
+                        <option value="">Select Institute Type</option>
+                        <option value="university">University</option>
+                        <option value="college">College</option>
+                        <option value="school">School</option>
+                        <option value="training_center">Training Center</option>
+                        <option value="online_platform">Online Platform</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Established Year *</label>
+                    <input type="number" name="established_year" placeholder="e.g., 1990" min="1800" max="2024" required>
+                </div>
+                <div class="form-group">
+                    <label>Government Registration No. *</label>
+                    <input type="text" name="govt_reg_no" placeholder="Enter registration number" required>
+                </div>
+                <div class="form-group">
+                    <label>Accreditation</label>
+                    <input type="text" name="accreditation" placeholder="e.g., NAAC, NBA, ISO">
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="form-section">
+            <h3 class="section-title">Contact Information</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Email Address *</label>
+                    <input type="email" name="email" placeholder="institute@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="text" name="phone" placeholder="+91XXXXXXXXXX" required>
+                </div>
+                <div class="form-group">
+                    <label>Website</label>
+                    <input type="url" name="website" placeholder="https://www.institute.com">
+                </div>
+                <div class="form-group full-width">
+                    <label>Address *</label>
+                    <textarea name="address" placeholder="Enter complete address" required></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Information -->
+        <div class="form-section">
+            <h3 class="section-title">Administrator Details</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Admin Name *</label>
+                    <input type="text" name="admin_name" placeholder="Full name of administrator" required>
+                </div>
+                <div class="form-group">
+                    <label>Designation *</label>
+                    <input type="text" name="designation" placeholder="e.g., Director, Principal, Head" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Credentials -->
+        <div class="credentials-section">
+            <h3 class="section-title">Login Credentials</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Username *</label>
+                    <input type="text" name="username" placeholder="Choose a username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password *</label>
+                    <input type="password" name="password" placeholder="Create a password" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documents -->
+        <div class="form-section">
+            <h3 class="section-title">Authorization Documents</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Institute Logo</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" name="logo" accept="image/*">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Authorized Signature *</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" name="signature" accept="image/*" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Courses -->
+        <div class="form-section">
+            <h3 class="section-title">Provided Courses</h3>
+            <div id="coursesContainer">
+                <p class="no-courses-message">Click "Add Course" to add courses offered by your institute</p>
+            </div>
+            <button type="button" class="add-course-btn" onclick="addCourse()">
+                <i class="fas fa-plus"></i> Add Course
+            </button>
+        </div>
+
+        <button type="submit">Submit Registration</button>
+
+        <div class="back-link">
+            <p>Already registered? <a href="{% url 'institution_login' %}">Login here</a></p>
+        </div>
+    </form>
+</div>
+
+<script>
+    let courseCount = 0;
+
+    function addCourse() {
+        const container = document.getElementById('coursesContainer');
+        
+        // Remove "no courses" message if it exists
+        const noCoursesMsg = container.querySelector('.no-courses-message');
+        if (noCoursesMsg) {
+            noCoursesMsg.remove();
+        }
+
+        courseCount++;
+        
+        const courseDiv = document.createElement('div');
+        courseDiv.className = 'course-entry';
+        courseDiv.id = 'course_' + courseCount;
+        
+        courseDiv.innerHTML = `
+            <div class="course-entry-header">
+                <span class="course-number">Course #${courseCount}</span>
+                <button type="button" class="remove-course-btn" onclick="removeCourse(${courseCount})">Remove</button>
+            </div>
+            <div class="course-fields">
+                <div class="form-group">
+                    <label>Course Name *</label>
+                    <input type="text" name="course_name_${courseCount}" placeholder="e.g., Python Programming" required>
+                </div>
+                <div class="form-group">
+                    <label>Duration *</label>
+                    <select name="duration_${courseCount}" required>
+                        <option value="">Select Duration</option>
+                        <option value="3">3 Months</option>
+                        <option value="6">6 Months</option>
+                        <option value="9">9 Months</option>
+                        <option value="12">12 Months</option>
+                        <option value="18">18 Months</option>
+                        <option value="24">24 Months</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(courseDiv);
+    }
+
+    function removeCourse(courseId) {
+        const courseDiv = document.getElementById('course_' + courseId);
+        if (courseDiv) {
+            courseDiv.remove();
+        }
+        
+        // Check if there are any courses left
+        const container = document.getElementById('coursesContainer');
+        if (container.children.length === 0) {
+            container.innerHTML = '<p class="no-courses-message">Click "Add Course" to add courses offered by your institute</p>';
+        }
+    }
+
+    // Handle form submission
+    document.getElementById('registrationForm').addEventListener('submit', function(e) {
+        const container = document.getElementById('coursesContainer');
+        const courseEntries = container.querySelectorAll('.course-entry');
+        
+        // Add a hidden field with the number of courses
+        let courseCountInput = document.createElement('input');
+        courseCountInput.type = 'hidden';
+        courseCountInput.name = 'course_count';
+        courseCountInput.value = courseEntries.length;
+        this.appendChild(courseCountInput);
+    });
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load student_filters %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - CertiVault</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        /* Top Navigation */
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .logo span {
+            color: #FFC107;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .profile-icon {
+            width: 40px;
+            height: 40px;
+            background: #FFC107;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            padding: 8px 20px;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .logout-btn:hover {
+            background: #333;
+            transform: translateY(-2px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 70px;
+            width: 260px;
+            height: calc(100vh - 70px);
+            background: white;
+            padding: 20px 0;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            margin: 5px 0;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 25px;
+            color: #555;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background: #FFF8E1;
+            color: #FFC107;
+            border-left: 4px solid #FFC107;
+        }
+
+        .sidebar-menu i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            margin-top: 70px;
+            padding: 30px;
+            min-height: calc(100vh - 70px);
+        }
+
+        .dashboard-header {
+            margin-bottom: 30px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 28px;
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        /* Alert Box */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .alert-warning {
+            background: #FFF3E0;
+            border-left: 4px solid #FF9800;
+            color: #E65100;
+        }
+
+        .alert-success {
+            background: #E8F5E9;
+            border-left: 4px solid #4CAF50;
+            color: #2E7D32;
+        }
+
+        .alert i {
+            font-size: 20px;
+        }
+
+        .alert-btn {
+            padding: 8px 20px;
+            background: #FF9800;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-left: auto;
+            text-decoration: none;
+        }
+
+        .alert-btn:hover {
+            background: #F57C00;
+        }
+
+        /* Stats Cards */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #FFC107;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            background: #FFF8E1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #FFC107;
+        }
+
+        .stat-info h3 {
+            font-size: 14px;
+            color: #777;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .stat-info .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        /* Section */
+        .section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #eee;
+            background: #FFF8E1;
+        }
+
+        .section-header h2 {
+            font-size: 20px;
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        .section-content {
+            padding: 25px;
+        }
+
+        /* Institute Cards */
+        .institute-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .institute-card {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .institute-card:hover {
+            border-color: #FFC107;
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+        }
+
+        .institute-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .institute-details {
+            font-size: 13px;
+            color: #777;
+            margin-bottom: 15px;
+        }
+
+        .course-list {
+            margin-top: 15px;
+        }
+
+        .course-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .course-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .course-duration {
+            font-size: 12px;
+            color: #777;
+        }
+
+        .enroll-btn {
+            padding: 6px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .enroll-btn:hover {
+            background: #43A047;
+        }
+
+        /* Enrollments Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th {
+            background: #f5f5f5;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            color: #555;
+        }
+
+        table tr:hover {
+            background: #fafafa;
+        }
+
+        .status-badge {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #FFF3E0;
+            color: #FF9800;
+        }
+
+        .status-approved {
+            background: #E3F2FD;
+            color: #2196F3;
+        }
+
+        .status-completed {
+            background: #E8F5E9;
+            color: #4CAF50;
+        }
+
+        .status-rejected {
+            background: #FFEBEE;
+            color: #F44336;
+        }
+
+        .action-btn {
+            padding: 6px 15px;
+            background: #FFC107;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 15px pointer;
+            font;
+            cursor:-size: 12px;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .action-btn:hover {
+            background: #FFD54F;
+        }
+
+        /* No Data */
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #777;
+        }
+
+        .no-data i {
+            font-size: 48px;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+
+        /* Certificate Grid */
+        .certificate-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .certificate-card {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 20px;
+            background: linear-gradient(135deg, #FFF8E1 0%, #FFFDE7 100%);
+            transition: all 0.3s ease;
+        }
+
+        .certificate-card:hover {
+            border-color: #FFC107;
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .certificate-icon {
+            width: 50px;
+            height: 50px;
+            background: #FFC107;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .certificate-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .certificate-details {
+            font-size: 13px;
+            color: #777;
+            margin-bottom: 15px;
+        }
+
+        .certificate-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .download-btn {
+            flex: 1;
+            padding: 8px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .download-btn:hover {
+            background: #43A047;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar-menu a span {
+                display: none;
+            }
+            
+            .sidebar-menu a {
+                justify-content: center;
+                padding: 15px;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <nav class="navbar">
+        <div class="logo">Certi<span>Vault</span></div>
+        <div class="navbar-right">
+            <div class="user-info">
+                <span class="user-name">{% if student.full_name %}{{ student.full_name }}{% else %}{{ user.username }}{% endif %}</span>
+                <div class="profile-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+            <a href="{% url 'logout' %}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <ul class="sidebar-menu">
+            <li><a href="#"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+            <li><a href="#my-enrollments"><i class="fas fa-graduation-cap"></i> <span>My Courses</span></a></li>
+            <li><a href="#mycertificates"><i class="fas fa-certificate"></i> <span>My Certificates</span></a></li>
+            <li><a href="{% url 'students:student_profile_update' %}"><i class="fas fa-user-edit"></i> <span>Edit Profile</span></a></li>
+            <li><a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="dashboard-header">
+            <h1>Student Dashboard</h1>
+        </div>
+
+        <!-- Profile Completion Alert -->
+        {% if profile_incomplete %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>Please complete your profile!</strong>
+                <p style="font-size: 13px; margin-top: 3px;">Add your phone number and address to enroll in courses.</p>
+            </div>
+            <a href="{% url 'students:student_profile_update' %}" class="alert-btn">Complete Profile</a>
+        </div>
+        {% endif %}
+
+        <!-- Stats Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Pending Requests</h3>
+                    <div class="stat-number">{{ pending_requests.count }}</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Active Courses</h3>
+                    <div class="stat-number">{{ active_courses.count }}</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-award"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Completed Courses</h3>
+                    <div class="stat-number">{{ completed_courses.count }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Enrollments -->
+        <div class="section" id="my-enrollments">
+            <div class="section-header">
+                <h2><i class="fas fa-list"></i> My Enrollments</h2>
+            </div>
+            <div class="section-content">
+                {% if enrollments %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Institute</th>
+                            <th>Course</th>
+                            <th>Duration</th>
+                            <th>Request Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enrollment in enrollments %}
+                        <tr>
+                            <td>{{ enrollment.institute.institute_name }}</td>
+                            <td>{{ enrollment.course.course_name }}</td>
+                            <td>{{ enrollment.course.duration_months }} months</td>
+                            <td>{{ enrollment.request_date|date:"d M Y" }}</td>
+                            <td>
+                                <span class="status-badge status-{{ enrollment.status|lower }}">
+                                    {{ enrollment.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if enrollment.status == 'Completed' %}
+                                <span style="font-size: 12px; color: #777;">Completed</span>
+                                {% elif enrollment.status == 'Approved' %}
+                                <span style="font-size: 12px; color: #777;">In Progress</span>
+                                {% else %}
+                                <span style="font-size: 12px; color: #777;">Waiting</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-data">
+                    <i class="fas fa-book-open"></i>
+                    <p>You haven't enrolled in any courses yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Available Courses for Enrollment -->
+        <div class="section" id="available-courses">
+            <div class="section-header">
+                <h2><i class="fas fa-university"></i> Available Courses for Enrollment</h2>
+            </div>
+            <div class="section-content">
+                {% if institutes %}
+                <div class="institute-grid">
+                    {% for institute in institutes %}
+                    <div class="institute-card">
+                        <div class="institute-name">
+                            {{ institute.institute_name }}
+                            {% if institute.status == 'Approved' %}
+                            <span class="status-badge status-approved" style="font-size: 10px; margin-left: 8px;">✓ Approved</span>
+                            {% elif institute.status == 'Pending' %}
+                            <span class="status-badge status-pending" style="font-size: 10px; margin-left: 8px;">⏳ Pending</span>
+                            {% elif institute.status == 'Rejected' %}
+                            <span class="status-badge status-rejected" style="font-size: 10px; margin-left: 8px;">✕ Rejected</span>
+                            {% endif %}
+                        </div>
+                        <div class="institute-details">
+                            <i class="fas fa-map-marker-alt"></i> {{ institute.address }}<br>
+                            <i class="fas fa-accreditation"></i> {{ institute.accreditation }}<br>
+                            <i class="fas fa-book"></i> {{ institute.courses.count }} Courses Available
+                        </div>
+                        {% if institute.courses.all %}
+                        <div class="course-list">
+                            {% for course in institute.courses.all %}
+                            {% with active_enrollment=active_enrollments_by_institute|get_item:institute.id %}
+                            <div class="course-item">
+                                <div>
+                                    <div class="course-name">{{ course.course_name }}</div>
+                                    <div class="course-duration">{{ course.duration_months }} months</div>
+                                    {% if active_enrollment and active_enrollment.course.id != course.id %}
+                                    <div style="font-size: 11px; color: #FF9800; margin-top: 2px;">
+                                        <i class="fas fa-info-circle"></i> Already enrolled in: {{ active_enrollment.course.course_name }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% if active_enrollment %}
+                                    {% if active_enrollment.course.id == course.id %}
+                                    <button type="button" class="enroll-btn" style="background: #2196F3;" disabled>Enrolled</button>
+                                    {% else %}
+                                    <button type="button" class="enroll-btn" style="background: #ccc; cursor: not-allowed;" disabled>Unavailable</button>
+                                    {% endif %}
+                                {% else %}
+                                <form method="POST" action="{% url 'students:enroll_course' %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="course_id" value="{{ course.id }}">
+                                    <button type="submit" class="enroll-btn">Enroll</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                            {% endwith %}
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p style="font-size: 12px; color: #777; margin-top: 10px;">No courses available yet.</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="no-data">
+                    <i class="fas fa-university"></i>
+                    <p>No institutes registered yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- My Certificates -->
+        <div class="section" id="mycertificates">
+            <div class="section-header">
+                <h2><i class="fas fa-certificate"></i> My Certificates</h2>
+            </div>
+            <div class="section-content">
+                {% if completed_courses %}
+                <div class="certificate-grid">
+                    {% for enrollment in completed_courses %}
+                    <div class="certificate-card">
+                        <div class="certificate-icon">
+                            <i class="fas fa-certificate"></i>
+                        </div>
+                        <div class="certificate-title">{{ enrollment.course.course_name }}</div>
+                        <div class="certificate-details">
+                            <i class="fas fa-university"></i> {{ enrollment.institute.institute_name }}<br>
+                            <i class="fas fa-calendar"></i> Completed: {{ enrollment.completion_date|date:"d M Y" }}
+                            {% if enrollment.marks %}
+                            <br><i class="fas fa-star"></i> Marks: {{ enrollment.marks }}%
+                            {% endif %}
+                        </div>
+                        <div class="certificate-actions">
+                            {% if enrollment.certificate_file %}
+                            <a href="{{ enrollment.certificate_file.url }}" class="download-btn" target="_blank" download>
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                            {% elif enrollment.certificate_requests.all %}
+                                {% with enrollment.certificate_requests.all|first as req %}
+                                {% if req.status == 'Pending' %}
+                                <span style="font-size: 12px; color: #FF9800; text-align: center; width: 100%;">
+                                    <i class="fas fa-clock"></i> Request Pending
+                                </span>
+                                {% elif req.status == 'Approved' %}
+                                <a href="#" class="download-btn" style="background: #4CAF50;">
+                                    <i class="fas fa-check"></i> Certificate Ready
+                                </a>
+                                {% else %}
+                                <button class="download-btn" onclick="showRequestModal('{{ enrollment.id }}', '{{ enrollment.course.course_name }}')" style="background: #FF9800;">
+                                    <i class="fas fa-redo"></i> Request Again
+                                </button>
+                                {% endif %}
+                                {% endwith %}
+                            {% else %}
+                            <button class="download-btn" onclick="showRequestModal('{{ enrollment.id }}', '{{ enrollment.course.course_name }}')" style="background: #FF9800;">
+                                <i class="fas fa-file-signature"></i> Request Certificate
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="no-data">
+                    <i class="fas fa-certificate"></i>
+                    <p>No certificates issued yet. Complete a course to receive your certificate.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Certificate Request Modal -->
+    <div id="certRequestModal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+        <div style="background: white; margin: 10% auto; padding: 30px; border-radius: 15px; width: 90%; max-width: 450px;">
+            <h3 style="margin-bottom: 15px;"><i class="fas fa-file-signature"></i> Request Certificate</h3>
+            <p style="margin-bottom: 20px; color: #777;">Course: <strong id="modalCourseName"></strong></p>
+            <p style="margin-bottom: 20px; color: #666; font-size: 14px;">Your certificate will be issued using your registered name: <strong>{{ student.full_name }}</strong></p>
+            <form method="POST" action="{% url 'students:request_certificate' %}">
+                {% csrf_token %}
+                <input type="hidden" name="enrollment_id" id="modalEnrollmentId">
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" onclick="closeRequestModal()" style="flex: 1; padding: 12px; background: #eee; border: none; border-radius: 8px; cursor: pointer;">Cancel</button>
+                    <button type="submit" style="flex: 1; padding: 12px; background: #FF9800; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Confirm Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showRequestModal(enrollmentId, courseName) {
+            document.getElementById('modalEnrollmentId').value = enrollmentId;
+            document.getElementById('modalCourseName').textContent = courseName;
+            document.getElementById('certRequestModal').style.display = 'block';
+        }
+        
+        function closeRequestModal() {
+            document.getElementById('certRequestModal').style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('certRequestModal')) {
+                closeRequestModal();
+            }
+        }
+    </script>
+
+</body>
+</html>
+

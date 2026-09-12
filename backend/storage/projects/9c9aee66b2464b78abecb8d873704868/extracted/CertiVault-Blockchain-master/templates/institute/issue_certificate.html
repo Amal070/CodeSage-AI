@@ -1,0 +1,72 @@
+{% extends "institute/base.html" %}
+
+{% block title %}Issue Certificate - CertiVault{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1><i class="fas fa-certificate"></i> Issue Certificate</h1>
+</div>
+
+<!-- Pending Certificate Requests -->
+{% if pending_cert_requests %}
+<div style="background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); padding: 30px; margin-bottom: 30px;">
+    <h2 style="margin-bottom: 20px; color: #1a1a1a;">
+        <i class="fas fa-clock"></i> Pending Certificate Requests
+    </h2>
+    
+    <div style="display: grid; gap: 15px;">
+        {% for req in pending_cert_requests %}
+        <div style="border: 1px solid #eee; border-radius: 10px; padding: 20px; background: #f9f9f9;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="font-size: 16px; color: #1a1a1a; margin-bottom: 5px;">
+                        <i class="fas fa-user"></i> {{ req.certificate_name }}
+                    </h3>
+                    <p style="font-size: 13px; color: #777;">
+                        <i class="fas fa-book"></i> {{ req.enrollment.course.course_name }} | 
+                        <i class="fas fa-university"></i> {{ req.enrollment.institute.institute_name }} |
+                        <i class="fas fa-calendar"></i> Requested: {{ req.request_date|date:"d M Y" }}
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <a href="{% url 'institute:generate_certificate' req.enrollment.id %}" 
+                       style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 8px; text-decoration: none; font-size: 14px;">
+                        <i class="fas fa-file-signature"></i> Issue Certificate
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="form-container" style="background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); padding: 30px;">
+    <h2 style="margin-bottom: 20px; color: #1a1a1a;">Upload Certificate</h2>
+
+    <form method="POST" enctype="multipart/form-data" style="display: grid; gap: 20px;">
+        {% csrf_token %}
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+            {% for field in form %}
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+                <label for="{{ field.id_for_label }}" style="color: #333; font-size: 14px; font-weight: 500;">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                <span style="color: #f44336; font-size: 12px;">{{ field.errors.0 }}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <button type="submit" style="padding: 15px 35px; background: #4CAF50; color: white; border: none; border-radius: 25px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; width: fit-content;">
+            <i class="fas fa-certificate"></i> Issue Certificate
+        </button>
+    </form>
+</div>
+
+{% endblock %}
+

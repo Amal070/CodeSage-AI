@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Certificate</title>
+<style>
+@page {
+    size: A4 landscape;
+    margin: 0;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Times New Roman', Georgia, serif;
+    background: #fff;
+    width: 1123px;
+    height: 794px;
+    overflow: hidden;
+}
+
+.certificate {
+    width: 1123px;
+    height: 794px;
+    position: relative;
+    background: linear-gradient(180deg, #fffef8 0%, #fffef8 100%);
+    border: 15px solid #1e3a5f;
+    padding: 25px;
+}
+
+.certificate::before {
+    content: '';
+    position: absolute;
+    top: 22px;
+    left: 22px;
+    right: 22px;
+    bottom: 22px;
+    border: 3px solid #c9a227;
+    pointer-events: none;
+}
+
+.certificate::after {
+    content: '';
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    right: 30px;
+    bottom: 30px;
+    border: 1px solid #c9a227;
+    pointer-events: none;
+}
+
+.header {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.seal {
+    width: 90px;
+    height: 90px;
+    background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #1e3a5f 100%);
+    border-radius: 50%;
+    border: 4px solid #c9a227;
+    margin: 0 auto 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.seal-text {
+    color: #c9a227;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.institute-name {
+    font-size: 32px;
+    font-weight: bold;
+    color: #1e3a5f;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+}
+
+.dividing-line {
+    width: 400px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #c9a227, transparent);
+    margin: 10px auto;
+}
+
+.title {
+    font-size: 36px;
+    font-weight: bold;
+    color: #2d3748;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    margin-top: 20px;
+    font-family: 'Georgia', serif;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: #718096;
+    font-style: italic;
+    margin-top: 8px;
+}
+
+.certify-text {
+    font-size: 16px;
+    color: #4a5568;
+    margin-top: 35px;
+    font-style: italic;
+}
+
+.student-name {
+    font-size: 42px;
+    font-weight: bold;
+    color: #1a202c;
+    margin: 15px 40px;
+    padding-bottom: 8px;
+    border-bottom: 3px solid #c9a227;
+    display: inline-block;
+    font-family: 'Brush Script MT', cursive, sans-serif;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+}
+
+.completion-text {
+    font-size: 16px;
+    color: #4a5568;
+    margin-top: 15px;
+    font-style: italic;
+}
+
+.course-name {
+    font-size: 26px;
+    font-weight: bold;
+    color: #1e3a5f;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 12px;
+}
+
+.marks-section {
+    font-size: 18px;
+    color: #4a5568;
+    margin-top: 20px;
+}
+
+.marks-section strong {
+    color: #b7791f;
+    font-size: 24px;
+}
+
+.year-section {
+    font-size: 16px;
+    color: #718096;
+    margin-top: 12px;
+}
+
+.year-section strong {
+    color: #1e3a5f;
+}
+
+.footer {
+    position: absolute;
+    bottom: 50px;
+    left: 50px;
+    right: 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.signature-section {
+    text-align: center;
+    width: 250px;
+}
+
+.signature-line {
+    width: 200px;
+    border-top: 2px solid #1e3a5f;
+    margin: 0 auto 8px;
+}
+
+.signature-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #1e3a5f;
+}
+
+.signature-designation {
+    font-size: 13px;
+    color: #718096;
+    font-style: italic;
+}
+
+.official-seal {
+    width: 110px;
+    height: 110px;
+    background: linear-gradient(135deg, #c9a227 0%, #f6e05e 30%, #c9a227 60%, #975a16 100%);
+    border-radius: 50%;
+    border: 4px solid #744210;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.inner-seal {
+    width: 85px;
+    height: 85px;
+    border: 2px solid #744210;
+    border-radius: 50%;
+    background: #fffef8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.star {
+    font-size: 28px;
+    color: #c9a227;
+    line-height: 1;
+}
+
+.seal-label {
+    font-size: 9px;
+    font-weight: bold;
+    color: #1e3a5f;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+}
+
+.certificate-id {
+    text-align: center;
+    margin-top: 25px;
+    font-size: 11px;
+    color: #a0aec0;
+    font-style: italic;
+}
+
+.footer-note {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 10px;
+    color: #cbd5e0;
+}
+</style>
+</head>
+<body>
+
+<div class="certificate">
+    
+    <div class="header">
+        <div class="seal">
+            <span class="seal-text">CV</span>
+        </div>
+        
+        <div class="institute-name">{{ institute_name }}</div>
+        
+        <div class="dividing-line"></div>
+        
+        <div class="title">Certificate of Completion</div>
+        
+        <div class="subtitle">This is to certify that</div>
+    </div>
+    
+    <div style="text-align: center;">
+        <div class="student-name">{{ student_name }}</div>
+        
+        <div class="certify-text">has successfully completed the course</div>
+        
+        <div class="course-name">{{ course_name }}</div>
+        
+        {% if marks %}
+        <div class="marks-section">
+            with <strong>{{ marks }}%</strong> marks
+        </div>
+        {% endif %}
+        
+        <div class="year-section">
+            Academic Year: <strong>{{ year }}</strong>
+        </div>
+        
+        <div class="certificate-id">
+            Certificate ID: {{ certificate_id }}
+        </div>
+    </div>
+    
+    <div class="footer">
+        <div class="signature-section">
+            {% if signature_url %}
+            <img src="{{ signature_url }}" style="width:120px;height:40px;object-fit:contain;filter:grayscale(100%) brightness(20%);" alt="Signature">
+            {% else %}
+            <div style="width:120px;height:35px;border-bottom:2px solid #1e3a5f;margin:0 auto;"></div>
+            {% endif %}
+            <div class="signature-line"></div>
+            <div class="signature-name">{{ director_name }}</div>
+            <div class="signature-designation">{{ designation }}</div>
+        </div>
+        
+        <div class="official-seal">
+            <div class="inner-seal">
+                <span class="star">★</span>
+                <span class="seal-label">Verified</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer-note">
+        This certificate is digitally verified and stored on blockchain • CertiVault - Secure Certificate Management System
+    </div>
+
+</div>
+
+</body>
+</html>
+

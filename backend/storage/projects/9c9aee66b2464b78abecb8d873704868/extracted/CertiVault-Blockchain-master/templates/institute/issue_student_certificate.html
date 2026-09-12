@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Certificate - CertiVault</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #1a1a1a;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .info-box {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .info-box p {
+            margin: 5px 0;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .info-box strong {
+            color: #1a1a1a;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .preview-btn {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+        }
+
+        .preview-btn:hover {
+            box-shadow: 0 5px 20px rgba(33, 150, 243, 0.4);
+        }
+
+        .cancel-btn {
+            background: #666;
+        }
+
+        .cancel-btn:hover {
+            background: #555;
+            box-shadow: 0 5px 20px rgba(102, 102, 102, 0.4);
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link a:hover {
+            color: #333;
+        }
+
+        #preview-container {
+            display: none;
+            margin-top: 30px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #certificate-canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .success-message {
+            background: #E8F5E9;
+            border: 1px solid #4CAF50;
+            color: #2E7D32;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message {
+            background: #FFEBEE;
+            border: 1px solid #F44336;
+            color: #C62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎓 Issue Certificate</h2>
+    <p class="subtitle">Generate certificate for student</p>
+
+    <div id="success-message" class="success-message"></div>
+    <div id="error-message" class="error-message"></div>
+
+    <div class="info-box">
+        <p><strong>Student:</strong> <span id="student-name">{{ enrollment.student.full_name }}</span></p>
+        <p><strong>Course:</strong> <span id="course-name">{{ enrollment.course.course_name }}</span></p>
+        <p><strong>Institute:</strong> {{ institute.institute_name }}</p>
+        <p><strong>Duration:</strong> {{ enrollment.course.duration_months }} months</p>
+        <p><strong>Completion Date:</strong> {{ enrollment.completion_date }}</p>
+    </div>
+
+    <form id="certificate-form">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="marks">Marks Obtained (%)</label>
+            <input type="number" name="marks" id="marks" step="0.01" min="0" max="100" placeholder="Enter marks (e.g., 85.50)" required>
+        </div>
+
+        <div class="form-group">
+            <label for="director_name">Director Name</label>
+            <input type="text" name="director_name" id="director_name" value="{{ institute.admin_name }}" placeholder="Enter director name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="designation">Designation</label>
+            <input type="text" name="designation" id="designation" value="{{ institute.designation }}" placeholder="e.g., Director, Principal" required>
+        </div>
+
+        <div class="form-group">
+            <label for="certificate_id">Certificate ID</label>
+            <input type="text" name="certificate_id" id="certificate_id" value="CV-{{ enrollment.id }}-{{ enrollment.student.student_id }}" readonly>
+        </div>
+
+        <input type="hidden" name="enrollment_id" id="enrollment_id" value="{{ enrollment.id }}">
+
+        <div class="btn-group">
+            <button type="button" class="preview-btn" id="preview-btn">👁️ Preview Certificate</button>
+            <button type="submit">✅ Generate & Send to Student</button>
+            <button type="button" class="cancel-btn" onclick="window.history.back()">Cancel</button>
+        </div>
+    </form>
+
+    <div id="preview-container">
+        <canvas id="certificate-canvas"></canvas>
+    </div>
+
+    <div class="back-link">
+        <a href="{% url 'institute:manage_enrollments' %}">← Back to Enrollments</a>
+    </div>
+</div>
+
+<script>
+    // Check if jsPDF is loaded
+    if (typeof window.jspdf === 'undefined') {
+        console.error('jsPDF not loaded!');
+        document.getElementById('error-message').textContent = 'Error: jsPDF library not loaded. Please refresh the page.';
+        document.getElementById('error-message').style.display = 'block';
+    }
+    
+    const { jsPDF } = window.jspdf;
+
+    // Certificate data
+    const studentName = "{{ enrollment.student.full_name|escapejs }}";
+    const courseName = "{{ enrollment.course.course_name|escapejs }}";
+    const instituteName = "{{ institute.institute_name|escapejs }}";
+    const enrollmentId = "{{ enrollment.id }}";
+    // Use current year as fallback if completion_date is not set
+    const completionYear = "{{ enrollment.completion_date.year }}" || new Date().getFullYear();
+    
+    console.log('Certificate data:', studentName, courseName, instituteName, completionYear);
+
+    // Function to generate PDF directly with jsPDF
+    function generateCertificatePDF(marks, directorName, designation) {
+        // Create PDF in landscape A4 size
+        const pdf = new jsPDF({
+            orientation: 'landscape',
+            unit: 'pt',
+            format: 'a4'
+        });
+        
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        
+        // Background
+        pdf.setFillColor(255, 254, 248);
+        pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+        
+        // Outer border
+        pdf.setDrawColor(30, 58, 95);
+        pdf.setLineWidth(15);
+        pdf.rect(20, 20, pageWidth - 40, pageHeight - 40);
+        
+        // Inner border
+        pdf.setDrawColor(201, 162, 39);
+        pdf.setLineWidth(3);
+        pdf.rect(35, 35, pageWidth - 70, pageHeight - 70);
+        
+        // Innermost border
+        pdf.setLineWidth(1);
+        pdf.rect(45, 45, pageWidth - 90, pageHeight - 90);
+        
+        // Seal at top center
+        const sealX = pageWidth / 2;
+        const sealY = 100;
+        
+        pdf.setFillColor(30, 58, 95);
+        pdf.circle(sealX, sealY, 45, 'F');
+        pdf.setDrawColor(201, 162, 39);
+        pdf.setLineWidth(4);
+        pdf.circle(sealX, sealY, 45, 'S');
+        
+        // Seal text "CV"
+        pdf.setTextColor(201, 162, 39);
+        pdf.setFontSize(28);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('CV', sealX, sealY + 10, { align: 'center' });
+        
+        // Institute Name
+        pdf.setTextColor(30, 58, 95);
+        pdf.setFontSize(32);
+        pdf.setFont('times', 'bold');
+        pdf.text(instituteName.toUpperCase(), pageWidth / 2, 180, { align: 'center' });
+        
+        // Decorative line
+        pdf.setDrawColor(201, 162, 39);
+        pdf.setLineWidth(2);
+        pdf.line(pageWidth/2 - 150, 200, pageWidth/2 + 150, 200);
+        
+        // Certificate Title
+        pdf.setTextColor(45, 55, 72);
+        pdf.setFontSize(36);
+        pdf.setFont('times', 'bold');
+        pdf.text('CERTIFICATE OF COMPLETION', pageWidth / 2, 240, { align: 'center' });
+        
+        // Subtitle
+        pdf.setTextColor(113, 128, 150);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'italic');
+        pdf.text('This is to certify that', pageWidth / 2, 280, { align: 'center' });
+        
+        // Student Name
+        pdf.setTextColor(26, 32, 44);
+        pdf.setFontSize(42);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(studentName, pageWidth / 2, 330, { align: 'center' });
+        
+        // Underline for name
+        pdf.setDrawColor(201, 162, 39);
+        pdf.setLineWidth(3);
+        pdf.line(pageWidth/2 - 150, 340, pageWidth/2 + 150, 340);
+        
+        // Completion text
+        pdf.setTextColor(74, 85, 104);
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'italic');
+        pdf.text('has successfully completed the course', pageWidth / 2, 375, { align: 'center' });
+        
+        // Course Name
+        pdf.setTextColor(30, 58, 95);
+        pdf.setFontSize(26);
+        pdf.setFont('times', 'bold');
+        pdf.text(courseName.toUpperCase(), pageWidth / 2, 415, { align: 'center' });
+        
+        // Marks
+        if (marks) {
+            pdf.setTextColor(74, 85, 104);
+            pdf.setFontSize(18);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text('with', pageWidth / 2, 455, { align: 'center' });
+            
+            pdf.setTextColor(183, 121, 31);
+            pdf.setFontSize(24);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(marks + '%', pageWidth / 2, 485, { align: 'center' });
+        }
+        
+        // Year
+        pdf.setTextColor(113, 128, 150);
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('Academic Year: ' + completionYear, pageWidth / 2, 530, { align: 'center' });
+        
+        // Certificate ID
+        const certId = document.getElementById('certificate_id').value;
+        pdf.setTextColor(160, 174, 192);
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'italic');
+        pdf.text('Certificate ID: ' + certId, pageWidth / 2, 560, { align: 'center' });
+        
+        // Footer - Signature Left
+        const footerY = pageHeight - 80;
+        
+        pdf.setDrawColor(30, 58, 95);
+        pdf.setLineWidth(2);
+        pdf.line(80, footerY, 250, footerY);
+        
+        pdf.setTextColor(30, 58, 95);
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(directorName, 165, footerY + 25, { align: 'center' });
+        
+        pdf.setTextColor(113, 128, 150);
+        pdf.setFontSize(13);
+        pdf.setFont('helvetica', 'italic');
+        pdf.text(designation, 165, footerY + 45, { align: 'center' });
+        
+        // Official Seal (Right)
+        const sealRightX = pageWidth - 150;
+        
+        // Outer gold seal
+        pdf.setFillColor(201, 162, 39);
+        pdf.circle(sealRightX, footerY, 55, 'F');
+        
+        // Inner white circle
+        pdf.setFillColor(255, 254, 248);
+        pdf.circle(sealRightX, footerY, 42, 'F');
+        
+        // Star
+        pdf.setTextColor(201, 162, 39);
+        pdf.setFontSize(28);
+        pdf.text('★', sealRightX, footerY - 5, { align: 'center' });
+        
+        // Verified text
+        pdf.setTextColor(30, 58, 95);
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('VERIFIED', sealRightX, footerY + 20, { align: 'center' });
+        
+        // Footer note
+        pdf.setTextColor(203, 213, 224);
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('This certificate is digitally verified and stored on blockchain • CertiVault - Secure Certificate Management System', pageWidth / 2, pageHeight - 25, { align: 'center' });
+        
+        return pdf;
+    }
+
+    // Preview button handler
+    document.getElementById('preview-btn').addEventListener('click', function() {
+        const marks = document.getElementById('marks').value || '85';
+        const directorName = document.getElementById('director_name').value || 'Director';
+        const designation = document.getElementById('designation').value || 'Principal';
+
+        // Generate PDF
+        const pdf = generateCertificatePDF(marks, directorName, designation);
+        
+        // Get PDF as data URL for preview
+        const pdfDataUrl = pdf.output('datauristring');
+        
+        // Show preview in iframe
+        const container = document.getElementById('preview-container');
+        container.innerHTML = `<iframe src="${pdfDataUrl}" width="100%" height="500" style="border:none;"></iframe>`;
+        container.style.display = 'block';
+        
+        // Scroll to preview
+        container.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Form submission
+    document.getElementById('certificate-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const marks = document.getElementById('marks').value;
+        const directorName = document.getElementById('director_name').value;
+        const designation = document.getElementById('designation').value;
+        const enrollmentId = document.getElementById('enrollment_id').value;
+        const certificateId = document.getElementById('certificate_id').value;
+
+        if (!marks) {
+            showError('Please enter marks');
+            return;
+        }
+
+        // Generate PDF
+        const pdf = generateCertificatePDF(marks, directorName, designation);
+
+        // Get PDF as base64
+        const pdfBase64 = pdf.output('datauristring');
+
+        // Show loading
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Generating...';
+
+        try {
+            // Get CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            // Send to server
+            const response = await fetch('{% url "institute:save_certificate" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    enrollment_id: enrollmentId,
+                    certificate_id: certificateId,
+                    marks: marks,
+                    director_name: directorName,
+                    designation: designation,
+                    pdf_data: pdfBase64
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showSuccess('Certificate generated and sent to student successfully!');
+                setTimeout(() => {
+                    window.location.href = '{% url "institute:manage_enrollments" %}';
+                }, 2000);
+            } else {
+                showError(data.message || 'Error generating certificate');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showError('An error occurred while generating the certificate');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '✅ Generate & Send to Student';
+        }
+    });
+
+    function showSuccess(message) {
+        const el = document.getElementById('success-message');
+        el.textContent = message;
+        el.style.display = 'block';
+        document.getElementById('error-message').style.display = 'none';
+    }
+
+    function showError(message) {
+        const el = document.getElementById('error-message');
+        el.textContent = message;
+        el.style.display = 'block';
+        document.getElementById('success-message').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
+

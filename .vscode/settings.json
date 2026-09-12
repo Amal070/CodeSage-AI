@@ -1,0 +1,13 @@
+{
+    "terminal.integrated.profiles.windows": {
+        "Codesage": {
+            "path": "cmd.exe",
+            "args": [
+                "/k",
+                "conda activate codesage"
+            ]
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "Codesage",
+    "python.defaultInterpreterPath": "C:\\Users\\ACER\\anaconda3\\envs\\codesage\\python.exe"
+}
