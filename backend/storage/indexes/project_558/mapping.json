@@ -1,0 +1,11 @@
+{
+  "project_id": 558,
+  "vector_count": 1,
+  "dimension": 768,
+  "index_type": "IndexFlatIP",
+  "metric": "cosine_similarity",
+  "created_at": "2026-09-13T06:50:09.213901+00:00",
+  "id_to_chunk": {
+    "0": "p558_payment_c1"
+  }
+}

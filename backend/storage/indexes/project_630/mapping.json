@@ -1,0 +1,32 @@
+{
+  "project_id": 630,
+  "vector_count": 22,
+  "dimension": 768,
+  "index_type": "IndexFlatIP",
+  "metric": "cosine_similarity",
+  "created_at": "2026-09-13T09:37:39.875567+00:00",
+  "id_to_chunk": {
+    "0": "p630_config.py_c0001_fd52cc0a",
+    "1": "p630_config.py_c0002_24c1f95c",
+    "2": "p630_config.py_c0003_dab69fe3",
+    "3": "p630_main.py_c0001_ec8007a5",
+    "4": "p630_main.py_c0002_0ff60427",
+    "5": "p630_models_record.py_c0001_43f1144a",
+    "6": "p630_models_record.py_c0002_ec0e6154",
+    "7": "p630_models_record.py_c0003_af587bef",
+    "8": "p630_requirements.txt_c0001_9cae34ea",
+    "9": "p630_services_api_client.py_c0001_9a59d9de",
+    "10": "p630_services_api_client.py_c0002_7f0dd2ad",
+    "11": "p630_services_api_client.py_c0003_e960c5ee",
+    "12": "p630_services_api_client.py_c0004_e03903a3",
+    "13": "p630_services_processor.py_c0001_27bfde80",
+    "14": "p630_services_processor.py_c0002_415b5216",
+    "15": "p630_services_processor.py_c0003_03e347f5",
+    "16": "p630_services_processor.py_c0004_2e2ae815",
+    "17": "p630_services_processor.py_c0005_c068b6b0",
+    "18": "p630_tests_test_processor.py_c0001_51eb1e00",
+    "19": "p630_tests_test_processor.py_c0002_c7dcf5fe",
+    "20": "p630_utils_logger.py_c0001_c03077ef",
+    "21": "p630_utils_logger.py_c0002_45c4d17a"
+  }
+}

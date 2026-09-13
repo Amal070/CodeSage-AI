@@ -12,9 +12,11 @@ export default function ProjectChat() {
   const [input, setInput] = useState('');
   const [topK, setTopK] = useState(5);
   const [sending, setSending] = useState(false);
+  const [loadingStage, setLoadingStage] = useState('searching');
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [error, setError] = useState(null);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [conversationId, setConversationId] = useState(null);
 
   // Project details & Index status
   const [projectName, setProjectName] = useState('');
@@ -31,6 +33,15 @@ export default function ProjectChat() {
     'Explain the database connection.',
     'How does the project upload process work?',
     'What does this file do?',
+  ];
+
+  // Contextual Follow-up Suggestions
+  const followUpPrompts = [
+    'Where is this implemented?',
+    'Explain that function.',
+    'Which function handles that?',
+    'What happens after that?',
+    'How does this connect to the database?',
   ];
 
   // Scroll chat to bottom
@@ -95,13 +106,18 @@ export default function ProjectChat() {
       if (res.ok) {
         const historyData = await res.json();
         const formattedMessages = [];
+        let latestConvId = null;
         historyData.forEach((item) => {
+          if (item.conversation_id) {
+            latestConvId = item.conversation_id;
+          }
           // User message
           formattedMessages.push({
             id: `user-${item.id}`,
             role: 'user',
             content: item.message,
             timestamp: item.created_at,
+            conversationId: item.conversation_id,
           });
           // Assistant response
           formattedMessages.push({
@@ -110,9 +126,13 @@ export default function ProjectChat() {
             content: item.response,
             sources: [], // Historical summaries
             timestamp: item.created_at,
+            conversationId: item.conversation_id,
           });
         });
         setMessages(formattedMessages);
+        if (latestConvId) {
+          setConversationId(latestConvId);
+        }
       }
     } catch {
       // ignore
@@ -140,10 +160,17 @@ export default function ProjectChat() {
       role: 'user',
       content: textToSend,
       timestamp: new Date().toISOString(),
+      conversationId: conversationId,
     };
 
     setMessages((prev) => [...prev, tempUserMsg]);
     setSending(true);
+    setLoadingStage('searching');
+
+    // Progressive stage transition for responsive UX
+    const stageTimer = setTimeout(() => {
+      setLoadingStage('generating');
+    }, 2500);
 
     try {
       const res = await fetch(`${BACKEND_URL}/api/projects/${projectId}/chat`, {
@@ -155,6 +182,7 @@ export default function ProjectChat() {
         body: JSON.stringify({
           question: textToSend,
           top_k: topK,
+          conversation_id: conversationId,
         }),
       });
 
@@ -170,6 +198,11 @@ export default function ProjectChat() {
         throw new Error(data.detail || 'Failed to receive AI chat response.');
       }
 
+      // Update active conversation session ID
+      if (data.conversation_id) {
+        setConversationId(data.conversation_id);
+      }
+
       const assistantMsg = {
         id: `asst-${data.chat_id || Date.now()}`,
         role: 'assistant',
@@ -177,30 +210,45 @@ export default function ProjectChat() {
         sources: data.sources || [],
         timestamp: data.created_at || new Date().toISOString(),
         model: data.model || 'gemma:2b',
+        conversationId: data.conversation_id,
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (err) {
       setError(err.message || 'An error occurred while communicating with CodeSage AI.');
     } finally {
+      clearTimeout(stageTimer);
       setSending(false);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 
-  // 5. Clear Chat History
+  // 5. New Chat (Start fresh conversation session)
+  const handleNewChat = () => {
+    setMessages([]);
+    setConversationId(null);
+    setError(null);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  // 6. Clear Chat History
   const handleClearHistory = async () => {
-    if (!window.confirm('Are you sure you want to clear the conversation history for this project?')) {
+    if (!window.confirm('Are you sure you want to clear conversation history for this project?')) {
       return;
     }
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/projects/${projectId}/chat`, {
+      const url = conversationId
+        ? `${BACKEND_URL}/api/projects/${projectId}/chat?conversation_id=${conversationId}`
+        : `${BACKEND_URL}/api/projects/${projectId}/chat`;
+
+      const res = await fetch(url, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         setMessages([]);
+        setConversationId(null);
         setError(null);
       }
     } catch {
@@ -244,14 +292,29 @@ export default function ProjectChat() {
                 fontWeight: 600,
               }}
             >
-              Day 15
+              Day 16: Grounded Chat
             </span>
+            {conversationId && (
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  background: 'rgba(56, 189, 248, 0.15)',
+                  color: '#38bdf8',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  fontWeight: 600,
+                }}
+              >
+                Session #{conversationId}
+              </span>
+            )}
           </div>
           <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary, #f8fafc)' }}>
             CodeSage AI Chat
           </h1>
           <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary, #94a3b8)' }}>
-            Ask natural-language questions about your project codebase with grounded RAG answers
+            Ask natural-language questions with project-grounded RAG answers and contextual follow-ups
           </p>
         </div>
 
@@ -372,12 +435,25 @@ export default function ProjectChat() {
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
             <span>Gemma 2B Grounded Chat</span>
             <span>&bull;</span>
+            <span>{conversationId ? `Session #${conversationId}` : 'New Session'}</span>
+            <span>&bull;</span>
             <span>{messages.length} message{messages.length !== 1 ? 's' : ''}</span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <button
+              type="button"
+              onClick={handleNewChat}
+              className="btn btn-secondary btn-sm"
+              style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem', borderColor: '#a855f7', color: '#d8b4fe' }}
+              title="Start a fresh conversation session"
+              id="new-chat-btn"
+            >
+              + New Chat
+            </button>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: '#94a3b8' }}>
-              <label htmlFor="chat-topk">Retrieval Chunks:</label>
+              <label htmlFor="chat-topk">Retrieval:</label>
               <select
                 id="chat-topk"
                 value={topK}
@@ -565,6 +641,42 @@ export default function ProjectChat() {
                         </button>
                       </div>
 
+                      {/* Relevant Files Summary (Day 17) */}
+                      {msg.sources && msg.sources.length > 0 && (() => {
+                        const uniqueFiles = Array.from(new Set(msg.sources.map((s) => s.file_path))).filter(Boolean);
+                        if (uniqueFiles.length === 0) return null;
+                        return (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.65rem', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600 }}>
+                              Relevant files:
+                            </span>
+                            {uniqueFiles.map((fp) => (
+                              <Link
+                                key={fp}
+                                to={`/dashboard/projects/${projectId}/explorer?file=${encodeURIComponent(fp)}`}
+                                style={{
+                                  fontSize: '0.72rem',
+                                  fontFamily: 'monospace',
+                                  color: '#a5b4fc',
+                                  background: 'rgba(99, 102, 241, 0.12)',
+                                  border: '1px solid rgba(99, 102, 241, 0.25)',
+                                  padding: '0.15rem 0.45rem',
+                                  borderRadius: '4px',
+                                  textDecoration: 'none',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.25rem',
+                                }}
+                                title={`Open ${fp} in Code Explorer`}
+                              >
+                                <span>📄</span>
+                                <span>{fp}</span>
+                              </Link>
+                            ))}
+                          </div>
+                        );
+                      })()}
+
                       {/* Source Badges */}
                       {msg.sources && msg.sources.length > 0 && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
@@ -623,12 +735,42 @@ export default function ProjectChat() {
                       )}
                     </div>
                   )}
+
+                  {/* Follow-up Question Chips for latest assistant message */}
+                  {msg.role === 'assistant' && idx === messages.length - 1 && !sending && (
+                    <div style={{ marginTop: '0.85rem', paddingTop: '0.65rem', borderTop: '1px dashed rgba(255, 255, 255, 0.08)' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#a855f7', fontWeight: 600, marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Suggested Follow-ups
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                        {followUpPrompts.map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => handleSend(p)}
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              fontSize: '0.75rem',
+                              padding: '0.2rem 0.55rem',
+                              borderRadius: '12px',
+                              background: 'rgba(168, 85, 247, 0.08)',
+                              border: '1px solid rgba(168, 85, 247, 0.25)',
+                              color: '#e9d5ff',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            💬 {p}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))
           )}
 
-          {/* Sending / Analyzing Bubble */}
+          {/* Sending / Progressive Analyzing Bubble */}
           {sending && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
               <div style={{ fontSize: '0.75rem', color: '#c084fc', marginBottom: '0.35rem', fontWeight: 600 }}>
@@ -648,10 +790,14 @@ export default function ProjectChat() {
                 <div className="loading-spinner" style={{ width: '20px', height: '20px' }}></div>
                 <div>
                   <div style={{ fontSize: '0.9rem', color: '#f8fafc', fontWeight: 500 }}>
-                    Searching relevant code & generating answer...
+                    {loadingStage === 'searching'
+                      ? 'Searching relevant project code with FAISS...'
+                      : 'Generating grounded answer with Gemma 2B...'}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                    FAISS retrieval &bull; LangChain context builder &bull; Gemma 2B
+                    {loadingStage === 'searching'
+                      ? 'Nomic Embed Text &bull; Contextual Query Enrichment &bull; Top-K Code Chunks'
+                      : 'LangChain RAG Chain &bull; Multi-turn Dialogue Context &bull; Source Citations'}
                   </div>
                 </div>
               </div>

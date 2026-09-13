@@ -45,6 +45,12 @@ from .chat import (
     ChatResponse,
     ChatHistoryItem,
 )
+from .context_retrieval import (
+    RetrievedChunkItem,
+    RetrievedFileItem,
+    ContextRetrievalRequest,
+    ContextRetrievalResponse,
+)
 
 __all__ = [
     "UserRegisterRequest",
@@ -80,5 +86,9 @@ __all__ = [
     "ChatRequest",
     "ChatResponse",
     "ChatHistoryItem",
+    "RetrievedChunkItem",
+    "RetrievedFileItem",
+    "ContextRetrievalRequest",
+    "ContextRetrievalResponse",
 ]
 

@@ -65,4 +65,16 @@ class Settings:
     MAX_RAG_QUESTION_LENGTH: int = int(os.getenv("MAX_RAG_QUESTION_LENGTH", "5000"))
     MAX_CONTEXT_CHARACTERS: int = int(os.getenv("MAX_CONTEXT_CHARACTERS", "12000"))
 
+    # AI Chat & Conversation History (Day 16)
+    CHAT_HISTORY_LIMIT: int = int(os.getenv("CHAT_HISTORY_LIMIT", "10"))
+    CHAT_MAX_CONTEXT_LENGTH: int = int(os.getenv("CHAT_MAX_CONTEXT_LENGTH", "12000"))
+    CHAT_MAX_HISTORY_LENGTH: int = int(os.getenv("CHAT_MAX_HISTORY_LENGTH", "4000"))
+
+    # Context Retrieval (Day 17)
+    RETRIEVAL_CANDIDATE_CHUNKS: int = int(os.getenv("RETRIEVAL_CANDIDATE_CHUNKS", "30"))
+    RETRIEVAL_TOP_FILES: int = int(os.getenv("RETRIEVAL_TOP_FILES", "5"))
+    RETRIEVAL_MAX_TOP_FILES: int = int(os.getenv("RETRIEVAL_MAX_TOP_FILES", "10"))
+    RETRIEVAL_CHUNKS_PER_FILE: int = int(os.getenv("RETRIEVAL_CHUNKS_PER_FILE", "3"))
+    RETRIEVAL_MIN_SIMILARITY_THRESHOLD: float = float(os.getenv("RETRIEVAL_MIN_SIMILARITY_THRESHOLD", "0.20"))
+
 settings = Settings()

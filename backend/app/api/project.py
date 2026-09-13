@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, UploadFile, File, Query, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -31,7 +31,10 @@ from app.schemas.semantic_search import (
 )
 from app.schemas.rag import RagRequest, RagResponse
 from app.schemas.chat import ChatRequest, ChatResponse, ChatHistoryItem
+from app.schemas.context_retrieval import ContextRetrievalRequest, ContextRetrievalResponse
 from app.services.chat_service import chat_service
+from app.services.faiss_service import faiss_service
+from app.services.context_retriever import context_retriever
 from app.services.project_service import (
     process_project_upload,
     get_user_projects,
@@ -467,7 +470,7 @@ def ask_project_question(
 
 
 # ============================================================
-# Day 15 — AI Chat Endpoints
+# Day 15 & Day 16 — AI Chat Endpoints
 # ============================================================
 
 @router.post(
@@ -482,13 +485,15 @@ def chat_with_project(
     db: Session = Depends(get_db),
 ):
     """
-    Day 15 AI Chat Endpoint:
+    Day 15 & Day 16 AI Chat Endpoint:
     - Requires valid JWT authentication.
     - Strictly verifies project ownership / tenancy.
-    - Validates question and optional top_k retrieval parameters.
+    - Validates question, optional top_k, and optional conversation_id.
     - Reuses Day 14 RAG pipeline (Nomic Embed Text + FAISS retrieval + Gemma 2B via LangChain).
-    - Persists conversation exchange in the PostgreSQL chat_history table.
-    - Returns grounded answer, source chunk citations with file paths and line numbers, and chat record ID.
+    - Uses Day 16 structured prompts and project-aware conversation history.
+    - Supports natural contextual follow-up questions with query enrichment.
+    - Persists conversation exchange in PostgreSQL chat_history.
+    - Returns grounded answer, source chunk citations with file paths and line numbers, and conversation_id.
     """
     return chat_service.send_message(
         db=db,
@@ -496,6 +501,7 @@ def chat_with_project(
         user_id=current_user.id,
         question=chat_req.question,
         top_k=chat_req.top_k,
+        conversation_id=chat_req.conversation_id,
     )
 
 
@@ -506,17 +512,20 @@ def chat_with_project(
 )
 def get_project_chat_history(
     project_id: int,
+    conversation_id: Optional[int] = Query(default=None, description="Filter by conversation session ID"),
     limit: int = Query(default=50, ge=1, le=100, description="Max history items to retrieve"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Retrieves stored conversation history for the authenticated user and project.
+    Optionally filters by conversation_id.
     """
     return chat_service.get_project_chat_history(
         db=db,
         project_id=project_id,
         user_id=current_user.id,
+        conversation_id=conversation_id,
         limit=limit,
     )
 
@@ -527,16 +536,77 @@ def get_project_chat_history(
 )
 def clear_project_chat_history(
     project_id: int,
+    conversation_id: Optional[int] = Query(default=None, description="Clear only a specific conversation session"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Deletes all conversation history for the authenticated user and project.
+    Deletes conversation history for the authenticated user and project.
+    Optionally scoped to conversation_id.
     """
     return chat_service.clear_project_chat_history(
         db=db,
         project_id=project_id,
         user_id=current_user.id,
+        conversation_id=conversation_id,
     )
+
+
+# ============================================================
+# Day 17 — Context Retrieval Endpoints
+# ============================================================
+
+@router.post(
+    "/{project_id}/context/retrieve",
+    response_model=ContextRetrievalResponse,
+    summary="Retrieve Top Matching Project Files & Code Chunks",
+)
+def retrieve_project_context(
+    project_id: int,
+    req: ContextRetrievalRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Day 17 Context Retrieval Endpoint:
+    - Requires valid JWT authentication.
+    - Strictly verifies project ownership and multi-tenant isolation.
+    - Retrieves candidate chunks via Day 12 FAISS semantic search.
+    - Groups matching chunks by project-relative file paths.
+    - Computes deterministic file relevance scores (peak + top-3 average + supporting evidence bonus).
+    - Selects top matching files and their strongest code chunks.
+    """
+    project = get_project_by_id(db, project_id, current_user.id)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found or you do not have permission to access it.",
+        )
+
+    # Check FAISS index readiness
+    index_path, mapping_path = faiss_service.get_index_file_paths(project.id)
+    if not index_path.exists() or not mapping_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please complete code indexing, embedding generation, and vector indexing before retrieving context.",
+        )
+
+    result = context_retriever.retrieve_context(
+        db=db,
+        project=project,
+        query=req.query,
+        top_files=req.top_files,
+        candidate_chunks=req.candidate_chunks,
+        chunks_per_file=req.chunks_per_file,
+    )
+
+    return ContextRetrievalResponse(
+        project_id=project.id,
+        query=result.query,
+        total_candidate_chunks=result.total_candidate_chunks,
+        total_matching_files=result.total_matching_files,
+        files=result.files,
+    )
+
 
 
