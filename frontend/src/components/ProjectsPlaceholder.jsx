@@ -16,9 +16,9 @@ export default function ProjectsPlaceholder() {
               <span className="pill-badge pill-purple">Scheduled for Day 5</span>
               <span className="pill-badge pill-cyan">Repository Workspace</span>
             </div>
-            <h2>Project Management &amp; Codebase Ingestion</h2>
+            <h2>Project Management &amp; Code Analysis</h2>
             <p className="placeholder-desc">
-              Repository ZIP upload, intelligent AST code parsing, and multi-file exploration capabilities will be activated in Day 5.
+              Project upload, intelligent code understanding, and multi-file exploration capabilities.
             </p>
           </div>
         </div>
@@ -75,14 +75,14 @@ export default function ProjectsPlaceholder() {
                 </svg>
               </div>
               <div>
-                <h3>Day 6: Tree-Sitter AST</h3>
-                <p className="card-desc">Deep structural grammar parsing</p>
+                <h3>Code Structure Analysis</h3>
+                <p className="card-desc">Deep structural code understanding</p>
               </div>
             </div>
-            <span className="badge badge-purple">Upcoming</span>
+            <span className="badge badge-purple">Active</span>
           </div>
           <p className="roadmap-text">
-            Extract functions, classes, dependencies, and docstrings across Python, JavaScript, and TypeScript with language-aware Tree-sitter parsers.
+            Extract functions, classes, dependencies, and docstrings across Python, JavaScript, and TypeScript with language-aware code analysis.
           </p>
         </div>
 
@@ -95,14 +95,14 @@ export default function ProjectsPlaceholder() {
                 </svg>
               </div>
               <div>
-                <h3>Day 7: Vector Embeddings &amp; RAG</h3>
+                <h3>AI Assistant &amp; Code Search</h3>
                 <p className="card-desc">Conversational codebase intelligence</p>
               </div>
             </div>
-            <span className="badge badge-success">Upcoming</span>
+            <span className="badge badge-success">Active</span>
           </div>
           <p className="roadmap-text">
-            High-density vector embeddings persisted into FAISS vector indexes, enabling context-grounded AI conversational assistance.
+            Instant semantic search and intelligent code explanations, enabling conversational AI assistance for your projects.
           </p>
         </div>
       </div>

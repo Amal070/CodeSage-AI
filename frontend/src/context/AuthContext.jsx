@@ -1,8 +1,63 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
-export const BACKEND_URL = 'http://localhost:8000';
+const resolveBackendUrl = () => {
+  if (typeof window !== 'undefined' && window.__CODESAGE_BACKEND_URL__) {
+    return window.__CODESAGE_BACKEND_URL__;
+  }
+  if (import.meta.env.VITE_BACKEND_URL) {
+    return import.meta.env.VITE_BACKEND_URL;
+  }
+  if (typeof window !== 'undefined' && window.location.hostname === '127.0.0.1') {
+    return 'http://127.0.0.1:8000';
+  }
+  return 'http://localhost:8000';
+};
+
+export const BACKEND_URL = resolveBackendUrl();
 
 const AuthContext = createContext(null);
+
+/**
+ * Resilient fetch that automatically tries 127.0.0.1, localhost, and Vite dev server proxy
+ * to prevent browser-level IPv6 loopback connection drops ("Failed to fetch").
+ */
+const resilientFetch = async (urlOrPath, options = {}) => {
+  const isFullUrl = urlOrPath.startsWith('http://') || urlOrPath.startsWith('https://');
+  const primaryUrl = isFullUrl ? urlOrPath : `${BACKEND_URL}${urlOrPath}`;
+
+  try {
+    return await fetch(primaryUrl, options);
+  } catch (primaryErr) {
+    const candidates = [];
+    if (primaryUrl.includes('localhost:8000')) {
+      candidates.push(primaryUrl.replace('localhost:8000', '127.0.0.1:8000'));
+    } else if (primaryUrl.includes('127.0.0.1:8000')) {
+      candidates.push(primaryUrl.replace('127.0.0.1:8000', 'localhost:8000'));
+    }
+
+    if (isFullUrl) {
+      try {
+        const parsed = new URL(urlOrPath);
+        candidates.push(parsed.pathname + parsed.search);
+      } catch {
+        // ignore
+      }
+    } else {
+      candidates.push(urlOrPath);
+    }
+
+    for (const altUrl of candidates) {
+      try {
+        const altRes = await fetch(altUrl, options);
+        return altRes;
+      } catch {
+        // try next candidate
+      }
+    }
+    throw primaryErr;
+  }
+};
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem('codesage_token') || null);
@@ -16,8 +71,15 @@ export const AuthProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(true);
 
+  const logout = useCallback(() => {
+    localStorage.removeItem('codesage_token');
+    localStorage.removeItem('codesage_user');
+    setToken(null);
+    setUser(null);
+  }, []);
+
   // Fetch current user from /api/auth/me whenever token is available or changes
-  const fetchCurrentUser = async (authToken) => {
+  const fetchCurrentUser = useCallback(async (authToken) => {
     const activeToken = authToken || token;
     if (!activeToken) {
       setUser(null);
@@ -26,7 +88,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/auth/me`, {
+      const res = await resilientFetch(`${BACKEND_URL}/api/auth/me`, {
         headers: {
           Authorization: `Bearer ${activeToken}`,
         },
@@ -48,7 +110,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [logout, token]);
 
   useEffect(() => {
     if (token) {
@@ -56,10 +118,10 @@ export const AuthProvider = ({ children }) => {
     } else {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, fetchCurrentUser]);
 
   const login = async (email, password) => {
-    const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
+    const res = await resilientFetch(`${BACKEND_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -88,7 +150,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (name, email, password) => {
-    const res = await fetch(`${BACKEND_URL}/api/auth/register`, {
+    const res = await resilientFetch(`${BACKEND_URL}/api/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -109,13 +171,6 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const logout = () => {
-    localStorage.removeItem('codesage_token');
-    localStorage.removeItem('codesage_user');
-    setToken(null);
-    setUser(null);
-  };
-
   const authFetch = async (endpoint, options = {}) => {
     const headers = {
       ...(options.headers || {}),
@@ -125,7 +180,7 @@ export const AuthProvider = ({ children }) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const res = await fetch(`${BACKEND_URL}${endpoint}`, {
+    const res = await resilientFetch(`${BACKEND_URL}${endpoint}`, {
       ...options,
       headers,
     });

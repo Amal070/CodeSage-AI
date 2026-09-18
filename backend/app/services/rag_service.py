@@ -48,10 +48,17 @@ class RagService:
         """
         Initializes LangChain ChatOllama wrapper using centralized configuration (Phases 19, 20).
         """
+        timeout = getattr(settings, "OLLAMA_TIMEOUT", 30.0)
+        base_url = (
+            settings.OLLAMA_BASE_URL.replace("localhost", "127.0.0.1")
+            if hasattr(settings, "OLLAMA_BASE_URL")
+            else "http://127.0.0.1:11434"
+        )
         return ChatOllama(
-            base_url=settings.OLLAMA_BASE_URL,
+            base_url=base_url,
             model=settings.OLLAMA_MODEL,
             temperature=0.1,  # Low temperature for deterministic, grounded answers
+            request_timeout=timeout,
         )
 
     def validate_request(self, question: str, top_k: int) -> Tuple[str, int]:

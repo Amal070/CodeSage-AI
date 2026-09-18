@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import LoadingState from './common/LoadingState';
 
 export default function ProjectAnalysis() {
   const { projectId } = useParams();
@@ -30,6 +31,12 @@ export default function ProjectAnalysis() {
   const [vectorIndexStatus, setVectorIndexStatus] = useState(null);
   const [vectorIndexResult, setVectorIndexResult] = useState(null);
   const [vectorIndexError, setVectorIndexError] = useState(null);
+
+  // Day 22 Export States
+  const [exportingMd, setExportingMd] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportNotification, setExportNotification] = useState(null);
+  const [exportError, setExportError] = useState(null);
 
   // Helper to format sizes nicely
   const formatSize = (bytes) => {
@@ -182,7 +189,7 @@ export default function ProjectAnalysis() {
 
     // Ensure project has indexed chunks (Phase 24 & 28)
     if (indexingStatus?.status !== 'indexed' || (indexingStatus?.total_chunks || 0) === 0) {
-      setEmbeddingError('Please index the project before generating embeddings.');
+      setEmbeddingError('Please analyze the project code before preparing for AI.');
       return;
     }
 
@@ -205,14 +212,14 @@ export default function ProjectAnalysis() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data.detail || 'Failed to generate embeddings for project code chunks.');
+        throw new Error(data.detail || 'Failed to prepare project for AI.');
       }
 
       setEmbeddingResult(data);
       fetchEmbeddingStatus();
       fetchVectorIndexStatus();
     } catch (err) {
-      setEmbeddingError(err.message || 'An unexpected error occurred during embedding generation.');
+      setEmbeddingError(err.message || 'An unexpected error occurred while preparing the project for AI.');
     } finally {
       setGeneratingEmbeddings(false);
     }
@@ -239,7 +246,7 @@ export default function ProjectAnalysis() {
     if (!token || !projectId || buildingVectorIndex) return;
 
     if (embeddingStatus?.status !== 'ready' && (embeddingStatus?.embedded_chunks || 0) === 0) {
-      setVectorIndexError('Project has no generated embeddings. Generate embeddings before building the vector index.');
+      setVectorIndexError('Please prepare the project for AI before enabling code search.');
       return;
     }
 
@@ -262,7 +269,7 @@ export default function ProjectAnalysis() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data.detail || 'Failed to build FAISS vector index.');
+        throw new Error(data.detail || 'Failed to prepare code search index.');
       }
 
       setVectorIndexResult(data);
@@ -271,6 +278,90 @@ export default function ProjectAnalysis() {
       setVectorIndexError(err.message || 'An unexpected error occurred during index build.');
     } finally {
       setBuildingVectorIndex(false);
+    }
+  };
+
+  // Day 22: Helper to trigger browser file download from Blob
+  const downloadBlob = (blob, defaultFilename) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = defaultFilename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+  // Day 22: Export Project Technical Report as Markdown
+  const handleExportMarkdown = async () => {
+    if (!token || !projectId || exportingMd) return;
+    setExportingMd(true);
+    setExportError(null);
+    setExportNotification(null);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/projects/${projectId}/export/markdown`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) {
+        logout();
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || 'Failed to export Markdown report.');
+      }
+      const cd = res.headers.get('Content-Disposition');
+      let filename = `${analysisData?.project_name || 'Project'}_Report.md`;
+      if (cd) {
+        const match = cd.match(/filename="?([^";]+)"?/);
+        if (match && match[1]) filename = match[1];
+      }
+      const blob = await res.blob();
+      downloadBlob(blob, filename);
+      setExportNotification(`Downloaded ${filename}`);
+      setTimeout(() => setExportNotification(null), 4000);
+    } catch (err) {
+      setExportError(err.message || 'Error exporting Markdown report.');
+    } finally {
+      setExportingMd(false);
+    }
+  };
+
+  // Day 22: Export Project Technical Report as PDF
+  const handleExportPdf = async () => {
+    if (!token || !projectId || exportingPdf) return;
+    setExportingPdf(true);
+    setExportError(null);
+    setExportNotification(null);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/projects/${projectId}/export/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) {
+        logout();
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || 'Failed to export PDF report.');
+      }
+      const cd = res.headers.get('Content-Disposition');
+      let filename = `${analysisData?.project_name || 'Project'}_Report.pdf`;
+      if (cd) {
+        const match = cd.match(/filename="?([^";]+)"?/);
+        if (match && match[1]) filename = match[1];
+      }
+      const blob = await res.blob();
+      downloadBlob(blob, filename);
+      setExportNotification(`Downloaded ${filename}`);
+      setTimeout(() => setExportNotification(null), 4000);
+    } catch (err) {
+      setExportError(err.message || 'Error exporting PDF report.');
+    } finally {
+      setExportingPdf(false);
     }
   };
 
@@ -398,11 +489,11 @@ export default function ProjectAnalysis() {
   // Loading State (Phase 20)
   if (loading) {
     return (
-      <div className="explorer-loading-state glass-card" id="analysis-loading-state">
-        <div className="loading-spinner"></div>
-        <h3>Analyzing project...</h3>
-        <p className="text-secondary font-mono">Generating structure, language breakdown, and statistics</p>
-      </div>
+      <LoadingState
+        title="Analyzing project..."
+        message="Generating structure, language breakdown, and statistics"
+        id="analysis-loading-state"
+      />
     );
   }
 
@@ -464,7 +555,7 @@ export default function ProjectAnalysis() {
             <div>
               <h1 className="analysis-project-title" id="analysis-project-title">{project_name}</h1>
               <p className="analysis-project-sub text-secondary font-mono">
-                Project diagnostics &bull; Recursive filesystem analysis
+                Project Overview &bull; Structure, languages, code metrics, and dependencies
               </p>
             </div>
           </div>
@@ -488,14 +579,14 @@ export default function ProjectAnalysis() {
             <span>Refresh Analysis</span>
           </button>
 
-          {/* Day 10 Code Indexing Action */}
+          {/* Analyze Code Action */}
           <button
             type="button"
             className="btn btn-secondary btn-sm"
             onClick={triggerIndexing}
             disabled={indexing || loading}
             id="index-project-btn"
-            title="Index project source code into structured chunks (Day 10)"
+            title="Analyze project code structure and symbols"
           >
             <svg
               width="15"
@@ -512,10 +603,10 @@ export default function ProjectAnalysis() {
               <polyline points="2 17 12 22 22 17"></polyline>
               <polyline points="2 12 12 17 22 12"></polyline>
             </svg>
-            <span>{indexing ? 'Indexing project...' : (indexingStatus?.status === 'indexed' ? 'Re-index Code' : 'Index Code')}</span>
+            <span>{indexing ? 'Analyzing code...' : (indexingStatus?.status === 'indexed' ? 'Re-analyze Code' : 'Analyze Code')}</span>
           </button>
 
-          {/* Day 11 Embedding Generation Action (Phase 24) */}
+          {/* Prepare Project for AI Action */}
           <button
             type="button"
             className="btn btn-secondary btn-sm"
@@ -524,8 +615,8 @@ export default function ProjectAnalysis() {
             id="generate-embeddings-btn"
             title={
               indexingStatus?.status !== 'indexed'
-                ? 'Index the project first before generating embeddings'
-                : 'Generate vector embeddings with Nomic Embed Text (Day 11)'
+                ? 'Analyze code first before preparing for AI'
+                : 'Prepare project for natural-language code search and AI assistance'
             }
           >
             <svg
@@ -544,14 +635,14 @@ export default function ProjectAnalysis() {
             </svg>
             <span>
               {generatingEmbeddings
-                ? 'Generating embeddings...'
+                ? 'Preparing for AI...'
                 : embeddingStatus?.status === 'ready'
-                ? 'Re-generate Embeddings'
-                : 'Generate Embeddings'}
+                ? 'Refresh AI Readiness'
+                : 'Prepare Project for AI'}
             </span>
           </button>
 
-          {/* Dependencies Link to Day 9 Dependency Analysis */}
+          {/* Dependencies Link */}
           <Link
             to={`/dashboard/projects/${projectId}/dependencies`}
             className="btn btn-secondary btn-sm"
@@ -567,7 +658,7 @@ export default function ProjectAnalysis() {
             <span>Dependencies</span>
           </Link>
 
-          {/* Day 12: Semantic Search Link */}
+          {/* Search Code Link */}
           <Link
             to={`/dashboard/projects/${projectId}/search`}
             className="btn btn-secondary btn-sm"
@@ -580,21 +671,7 @@ export default function ProjectAnalysis() {
             <span>Search Code</span>
           </Link>
 
-          {/* Day 14: RAG Q&A Link */}
-          <Link
-            to={`/dashboard/projects/${projectId}/ask`}
-            className="btn btn-secondary btn-sm"
-            id="ask-codesage-btn"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-              <polyline points="2 17 12 22 22 17"></polyline>
-              <polyline points="2 12 12 17 22 12"></polyline>
-            </svg>
-            <span>Ask CodeSage</span>
-          </Link>
-
-          {/* Day 15: AI Chat Link */}
+          {/* Ask AI Link */}
           <Link
             to={`/dashboard/projects/${projectId}/chat`}
             className="btn btn-secondary btn-sm"
@@ -607,13 +684,28 @@ export default function ProjectAnalysis() {
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
-            <span>AI Chat</span>
+            <span>Ask AI</span>
           </Link>
 
-          {/* Explore Code Link to Day 6/7 File Explorer */}
+          {/* Function Docs Link */}
+          <Link
+            to={`/dashboard/projects/${projectId}/functions`}
+            className="btn btn-secondary btn-sm"
+            id="functions-doc-btn"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            <span>Documentation</span>
+          </Link>
+
+          {/* Explore Code Link */}
           <Link
             to={`/dashboard/projects/${projectId}/explorer`}
-            className="btn btn-primary btn-sm"
+            className="btn btn-secondary btn-sm"
             id="explore-code-btn"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -622,8 +714,90 @@ export default function ProjectAnalysis() {
             </svg>
             <span>Explore Code</span>
           </Link>
+
+          {/* Day 22: Export Markdown Action */}
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={handleExportMarkdown}
+            disabled={exportingMd || loading}
+            id="export-markdown-btn"
+            title="Download full project technical documentation as Markdown (.md)"
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={exportingMd ? 'animate-spin' : ''}
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>{exportingMd ? 'Exporting MD...' : 'Export MD'}</span>
+          </button>
+
+          {/* Day 22: Export PDF Action */}
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={handleExportPdf}
+            disabled={exportingPdf || loading}
+            id="export-pdf-btn"
+            title="Download publication-quality project technical report as PDF (.pdf)"
+            style={{
+              background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)',
+              border: 'none',
+              color: '#030712',
+              fontWeight: 600,
+            }}
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={exportingPdf ? 'animate-spin' : ''}
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            <span>{exportingPdf ? 'Generating PDF...' : 'Export PDF'}</span>
+          </button>
         </div>
       </header>
+
+      {/* Day 22: Export Notification / Feedback */}
+      {exportNotification && (
+        <div className="glass-card" style={{ padding: '0.75rem 1.25rem', marginBottom: '1.25rem', borderLeft: '4px solid #10b981', display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(16, 185, 129, 0.08)' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <span style={{ color: '#ecfdf5', fontSize: '0.9rem' }}>{exportNotification}</span>
+        </div>
+      )}
+      {exportError && (
+        <div className="glass-card" style={{ padding: '0.75rem 1.25rem', marginBottom: '1.25rem', borderLeft: '4px solid #ef4444', display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(239, 68, 68, 0.08)' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span style={{ color: '#fee2e2', fontSize: '0.9rem' }}>{exportError}</span>
+        </div>
+      )}
 
       {/* Empty Project Warning (Phase 22) */}
       {totalFiles === 0 && (
@@ -697,8 +871,8 @@ export default function ProjectAnalysis() {
         </div>
       </section>
 
-      {/* Day 10: Code Indexing Pipeline Banner & Status */}
-      <section className="indexing-pipeline-card glass-card animate-fade-in" id="code-indexing-section">
+      {/* Code Analysis Card & Status */}
+      <section className="indexing-pipeline-card glass-card animate-fade-in" id="indexing-section">
         <div className="indexing-card-header">
           <div className="indexing-title-wrap">
             <div className="indexing-icon-wrap">
@@ -710,23 +884,23 @@ export default function ProjectAnalysis() {
             </div>
             <div>
               <div className="indexing-title-row">
-                <h3 className="indexing-title">Code Indexing Pipeline</h3>
+                <h3 className="indexing-title">Code Analysis Status</h3>
                 {indexing ? (
                   <span className="badge badge-purple animate-pulse font-mono" id="indexing-badge-progress">
-                    Indexing project...
+                    Analyzing code...
                   </span>
                 ) : indexingStatus?.status === 'indexed' ? (
                   <span className="badge badge-success font-mono" id="indexing-badge-completed">
-                    Indexed ({indexingStatus.total_chunks} chunks)
+                    Analyzed ({indexingStatus.indexed_files} files)
                   </span>
                 ) : (
                   <span className="badge badge-warning font-mono" id="indexing-badge-pending">
-                    Not Indexed
+                    Not Analyzed
                   </span>
                 )}
               </div>
               <p className="indexing-desc text-secondary font-mono">
-                Structural AST code chunking, symbol extraction & metadata storage (Day 10)
+                Introspects code structure, functions, classes, and project symbols
               </p>
             </div>
           </div>
@@ -753,7 +927,7 @@ export default function ProjectAnalysis() {
               <polyline points="2 17 12 22 22 17"></polyline>
               <polyline points="2 12 12 17 22 12"></polyline>
             </svg>
-            <span>{indexing ? 'Indexing project...' : (indexingStatus?.status === 'indexed' ? 'Re-index Project' : 'Index Project')}</span>
+            <span>{indexing ? 'Analyzing code...' : (indexingStatus?.status === 'indexed' ? 'Re-analyze Code' : 'Analyze Code')}</span>
           </button>
         </div>
 
@@ -767,7 +941,7 @@ export default function ProjectAnalysis() {
               </svg>
             </div>
             <div className="font-mono text-sm">
-              <strong>Project indexed successfully:</strong> {indexResult.indexed_files} source files processed &bull; {indexResult.total_chunks} code chunks generated and stored.
+              <strong>Code analyzed successfully:</strong> {indexResult.indexed_files} source files processed and organized.
             </div>
           </div>
         )}
@@ -783,7 +957,7 @@ export default function ProjectAnalysis() {
               </svg>
             </div>
             <div className="font-mono text-sm text-error">
-              <strong>Indexing Error:</strong> {indexError}
+              <strong>Analysis Error:</strong> {indexError}
             </div>
           </div>
         )}
@@ -791,7 +965,7 @@ export default function ProjectAnalysis() {
         {/* Empty project warning */}
         {totalFiles === 0 && (
           <div className="indexing-empty-banner font-mono text-secondary text-sm">
-            No indexable source files found in this project.
+            No analyzeable source files found in this project.
           </div>
         )}
 
@@ -799,11 +973,11 @@ export default function ProjectAnalysis() {
         {indexingStatus?.status === 'indexed' && (
           <div className="indexing-stats-row font-mono text-secondary" id="indexing-stats-strip">
             <div className="indexing-stat-pill">
-              <span className="stat-label">Total Chunks:</span>
+              <span className="stat-label">Code Sections:</span>
               <span className="stat-num text-purple font-bold">{indexingStatus.total_chunks}</span>
             </div>
             <div className="indexing-stat-pill">
-              <span className="stat-label">Files Indexed:</span>
+              <span className="stat-label">Files Analyzed:</span>
               <span className="stat-num text-cyan font-bold">{indexingStatus.indexed_files}</span>
             </div>
             {Object.keys(indexingStatus.languages || {}).length > 0 && (
@@ -820,39 +994,39 @@ export default function ProjectAnalysis() {
         )}
       </section>
 
-      {/* Day 11: Embedding Generation Pipeline Card & Status */}
+      {/* AI Code Preparation Card & Status */}
       <section className="indexing-pipeline-card glass-card animate-fade-in" id="embedding-generation-section">
         <div className="indexing-card-header">
           <div className="indexing-title-wrap">
             <div className="indexing-icon-wrap" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l-.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
               </svg>
             </div>
             <div>
               <div className="indexing-title-row">
-                <h3 className="indexing-title">Embedding Generation Pipeline</h3>
+                <h3 className="indexing-title">AI Code Preparation</h3>
                 {generatingEmbeddings ? (
                   <span className="badge badge-purple animate-pulse font-mono" id="embedding-badge-progress">
-                    Generating embeddings...
+                    Preparing project for AI...
                   </span>
                 ) : embeddingStatus?.status === 'ready' ? (
                   <span className="badge badge-success font-mono" id="embedding-badge-completed">
-                    Embeddings Ready ({embeddingStatus.embedded_chunks} / {embeddingStatus.total_chunks} chunks &bull; {embeddingStatus.embedding_dimension || 768}-dim)
+                    AI Ready ({embeddingStatus.embedded_chunks} sections prepared)
                   </span>
                 ) : embeddingStatus?.status === 'partial_ready' ? (
                   <span className="badge badge-warning font-mono" id="embedding-badge-partial">
-                    Partially Embedded ({embeddingStatus.embedded_chunks} / {embeddingStatus.total_chunks})
+                    Partially Prepared ({embeddingStatus.embedded_chunks} / {embeddingStatus.total_chunks})
                   </span>
                 ) : (
                   <span className="badge badge-warning font-mono" id="embedding-badge-pending">
-                    Not Generated
+                    Not Prepared
                   </span>
                 )}
               </div>
               <p className="indexing-desc text-secondary font-mono">
-                Nomic Embed Text (v1.5) &bull; 768-dimensional normalized vectors &bull; Ready for Day 12
+                Prepares project for natural-language code search and AI assistance
               </p>
             </div>
           </div>
@@ -876,29 +1050,29 @@ export default function ProjectAnalysis() {
               className={generatingEmbeddings ? 'animate-spin' : ''}
             >
               <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l-.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
             </svg>
             <span>
               {generatingEmbeddings
-                ? 'Generating embeddings...'
+                ? 'Preparing project for AI...'
                 : embeddingStatus?.status === 'ready'
-                ? 'Re-generate Embeddings'
-                : 'Generate Embeddings'}
+                ? 'Refresh AI Readiness'
+                : 'Prepare Project for AI'}
             </span>
           </button>
         </div>
 
-        {/* Real Loading State (Phase 26) */}
+        {/* Real Loading State */}
         {generatingEmbeddings && (
           <div className="indexing-loading-banner glass-subcard animate-fade-in" id="embedding-generating-notice">
             <div className="loading-spinner-sm"></div>
             <div className="font-mono text-sm">
-              <strong>Generating embeddings with Nomic Embed Text...</strong> Processing code chunks in batches on CPU/GPU.
+              <strong>Preparing your project for AI...</strong> Analyzing code semantics and preparing search capabilities.
             </div>
           </div>
         )}
 
-        {/* Embedding Success Message (Phase 27) */}
+        {/* Embedding Success Message */}
         {embeddingResult && (
           <div className="indexing-success-banner glass-subcard animate-fade-in" id="embedding-success-notice">
             <div className="alert-icon text-success">
@@ -908,12 +1082,12 @@ export default function ProjectAnalysis() {
               </svg>
             </div>
             <div className="font-mono text-sm">
-              <strong>Embeddings generated successfully:</strong> {embeddingResult.embedded_chunks} chunks embedded &bull; {embeddingResult.skipped_chunks} unchanged chunks skipped &bull; {embeddingResult.embedding_dimension}-dimensional vectors stored.
+              <strong>Project prepared for AI:</strong> {embeddingResult.embedded_chunks} code sections ready for intelligent search.
             </div>
           </div>
         )}
 
-        {/* Embedding Error Message (Phase 28) */}
+        {/* Embedding Error Message */}
         {embeddingError && (
           <div className="indexing-error-banner glass-subcard animate-fade-in" id="embedding-error-notice">
             <div className="alert-icon text-error">
@@ -924,7 +1098,7 @@ export default function ProjectAnalysis() {
               </svg>
             </div>
             <div className="font-mono text-sm text-error">
-              <strong>Embedding Error:</strong> {embeddingError}
+              <strong>Preparation Notice:</strong> {embeddingError}
             </div>
           </div>
         )}
@@ -932,7 +1106,7 @@ export default function ProjectAnalysis() {
         {/* Not Indexed Warning */}
         {indexingStatus?.status !== 'indexed' && (
           <div className="indexing-empty-banner font-mono text-secondary text-sm">
-            Please index the project before generating embeddings.
+            Please analyze the project code before preparing for AI.
           </div>
         )}
 
@@ -940,26 +1114,18 @@ export default function ProjectAnalysis() {
         {embeddingStatus?.status === 'ready' && (
           <div className="indexing-stats-row font-mono text-secondary" id="embedding-stats-strip">
             <div className="indexing-stat-pill">
-              <span className="stat-label">Embedded Chunks:</span>
+              <span className="stat-label">Prepared Sections:</span>
               <span className="stat-num text-cyan font-bold">{embeddingStatus.embedded_chunks}</span>
             </div>
             <div className="indexing-stat-pill">
-              <span className="stat-label">Vector Dimension:</span>
-              <span className="stat-num text-purple font-bold">{embeddingStatus.embedding_dimension}</span>
-            </div>
-            <div className="indexing-stat-pill">
-              <span className="stat-label">Model:</span>
-              <span className="stat-num text-emerald font-bold">{embeddingStatus.model || 'nomic-ai/nomic-embed-text-v1.5'}</span>
-            </div>
-            <div className="indexing-stat-pill">
-              <span className="stat-label">Status:</span>
-              <span className="stat-num text-success font-bold">Ready for Day 12</span>
+              <span className="stat-label">AI Readiness:</span>
+              <span className="stat-num text-emerald font-bold">Ready</span>
             </div>
           </div>
         )}
       </section>
 
-      {/* Day 12: FAISS Vector Retrieval Index Card & Status */}
+      {/* Code Search Index Card & Status */}
       <section className="indexing-pipeline-card glass-card animate-fade-in" id="vector-index-section">
         <div className="indexing-card-header">
           <div className="indexing-title-wrap">
@@ -972,18 +1138,18 @@ export default function ProjectAnalysis() {
             </div>
             <div>
               <div className="indexing-title-row">
-                <h3 className="indexing-title">FAISS Vector Index Pipeline</h3>
+                <h3 className="indexing-title">Code Search Index</h3>
                 {buildingVectorIndex ? (
                   <span className="badge badge-purple animate-pulse font-mono" id="vector-badge-progress">
-                    Building vector index...
+                    Preparing code search...
                   </span>
                 ) : vectorIndexStatus?.status === 'ready' ? (
                   <span className="badge badge-success font-mono" id="vector-badge-ready">
-                    Vector Index Ready ({vectorIndexStatus.indexed_vectors} vectors &bull; {vectorIndexStatus.embedding_dimension || 768}-dim &bull; {vectorIndexStatus.index_type || 'IndexFlatIP'})
+                    Search Ready ({vectorIndexStatus.indexed_vectors} sections indexed)
                   </span>
                 ) : vectorIndexStatus?.status === 'stale' ? (
                   <span className="badge badge-warning font-mono" id="vector-badge-stale">
-                    Index Stale ({vectorIndexStatus.indexed_vectors} indexed vs {vectorIndexStatus.embedded_chunks} embedded)
+                    Index Update Recommended
                   </span>
                 ) : (
                   <span className="badge badge-warning font-mono" id="vector-badge-pending">
@@ -992,7 +1158,7 @@ export default function ProjectAnalysis() {
                 )}
               </div>
               <p className="indexing-desc text-secondary font-mono">
-                FAISS IndexFlatIP exact cosine similarity retrieval &bull; Persistent vector-to-chunk mapping (Day 12)
+                Enables fast, intelligent code search across all files in your project
               </p>
             </div>
           </div>
@@ -1008,7 +1174,7 @@ export default function ProjectAnalysis() {
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <span>Semantic Search</span>
+                <span>Search Code</span>
               </Link>
             )}
 
@@ -1042,10 +1208,10 @@ export default function ProjectAnalysis() {
               </svg>
               <span>
                 {buildingVectorIndex
-                  ? 'Building FAISS Index...'
+                  ? 'Preparing code search...'
                   : vectorIndexStatus?.status === 'ready'
-                  ? 'Rebuild Vector Index'
-                  : 'Build Vector Index'}
+                  ? 'Update Search Index'
+                  : 'Enable Code Search'}
               </span>
             </button>
           </div>
@@ -1056,7 +1222,7 @@ export default function ProjectAnalysis() {
           <div className="indexing-loading-banner glass-subcard animate-fade-in" id="vector-building-notice">
             <div className="loading-spinner-sm"></div>
             <div className="font-mono text-sm">
-              <strong>Building FAISS vector index...</strong> Compiling embeddings into IndexFlatIP and serializing vector mapping.
+              <strong>Preparing code search...</strong> Indexing code sections for natural language search.
             </div>
           </div>
         )}
@@ -1071,7 +1237,7 @@ export default function ProjectAnalysis() {
               </svg>
             </div>
             <div className="font-mono text-sm">
-              <strong>Vector index built successfully:</strong> {vectorIndexResult.indexed_vectors} vectors indexed &bull; {vectorIndexResult.embedding_dimension}-dimensional &bull; {vectorIndexResult.index_type} ready for semantic retrieval.
+              <strong>Code search ready:</strong> {vectorIndexResult.indexed_vectors} code sections indexed and searchable.
             </div>
           </div>
         )}
@@ -1087,7 +1253,7 @@ export default function ProjectAnalysis() {
               </svg>
             </div>
             <div className="font-mono text-sm text-error">
-              <strong>Vector Index Error:</strong> {vectorIndexError}
+              <strong>Search Index Notice:</strong> {vectorIndexError}
             </div>
           </div>
         )}

@@ -55,9 +55,14 @@ class Settings:
     MAX_SEARCH_TOP_K: int = int(os.getenv("MAX_SEARCH_TOP_K", "20"))
 
     # Ollama & Gemma LLM (Day 13)
-    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").replace("localhost", "127.0.0.1")
     OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "gemma:2b")
+    OLLAMA_TIMEOUT: float = float(os.getenv("OLLAMA_TIMEOUT", "30.0"))
     MAX_PROMPT_LENGTH: int = int(os.getenv("MAX_PROMPT_LENGTH", "10000"))
+    EXTRACTED_DIR: str = os.getenv(
+        "EXTRACTED_DIR",
+        str(Path(__file__).resolve().parent.parent.parent / "storage" / "projects")
+    )
 
     # LangChain & RAG Pipeline (Day 14)
     DEFAULT_RAG_TOP_K: int = int(os.getenv("DEFAULT_RAG_TOP_K", "5"))

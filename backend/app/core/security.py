@@ -39,7 +39,9 @@ def create_access_token(
     to_encode = data.copy()
     now = datetime.now(timezone.utc)
     
-    if expires_delta:
+    if "exp" in data:
+        expire = data["exp"]
+    elif expires_delta:
         expire = now + expires_delta
     else:
         expire = now + timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)

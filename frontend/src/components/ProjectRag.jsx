@@ -124,7 +124,7 @@ export default function ProjectRag() {
         }
       }, 100);
     } catch (err) {
-      setError(err.message || 'An unexpected error occurred while running the RAG pipeline.');
+      setError(err.message || 'The AI assistant is currently unavailable. Please try again later.');
     } finally {
       setAsking(false);
     }
@@ -158,18 +158,15 @@ export default function ProjectRag() {
               {projectName || `Project #${projectId}`}
             </Link>
             <span className="breadcrumb-separator">/</span>
-            <span className="breadcrumb-current">Ask CodeSage</span>
+            <span className="breadcrumb-current">AI Assistant</span>
           </nav>
           <div className="title-row" style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <h1 className="project-title" style={{ margin: 0 }}>
-              CodeSage AI &mdash; Ask Your Codebase
+              AI Assistant
             </h1>
-            <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>
-              Day 14 RAG
-            </span>
           </div>
           <p className="project-subtitle" style={{ margin: '0.25rem 0 0 0', color: 'var(--text-secondary, #94a3b8)' }}>
-            Retrieval-Augmented Generation powered by FAISS, Nomic Embeddings, LangChain, and local Gemma 2B.
+            Ask questions about your project and understand your code faster.
           </p>
         </div>
 
@@ -193,7 +190,7 @@ export default function ProjectRag() {
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <span>Vector Search</span>
+            <span>Search Code</span>
           </Link>
           <Link
             to={`/dashboard/projects/${projectId}/chat`}
@@ -228,16 +225,16 @@ export default function ProjectRag() {
         <div className="alert-card glass-card warning" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
-              Vector Index Notice: Status is &ldquo;{indexStatus.status}&rdquo;
+              Code Search Notice
             </div>
             <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary, #94a3b8)' }}>
               {indexStatus.status === 'not_built'
-                ? 'Please build the FAISS vector index from Day 12 before asking questions.'
-                : 'Your index may be stale or empty. For best results, rebuild the vector index.'}
+                ? 'Please enable code search for this project to get the most accurate answers.'
+                : 'Your search index may need an update for the newest project files.'}
             </p>
           </div>
           <Link to={`/dashboard/projects/${projectId}/search`} className="btn btn-secondary btn-sm">
-            Go to Vector Search
+            Enable Code Search
           </Link>
         </div>
       )}
@@ -246,10 +243,10 @@ export default function ProjectRag() {
       <div className="glass-card" style={{ padding: '1.75rem', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <label htmlFor="rag-question-input" style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--text-primary, #f8fafc)' }}>
-            Ask a Question about this Codebase
+            Ask a Question about this Project
           </label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary, #94a3b8)' }}>
-            <label htmlFor="rag-topk-select">Retrieval Chunks (Top-K):</label>
+            <label htmlFor="rag-topk-select">Context Sources:</label>
             <select
               id="rag-topk-select"
               value={topK}
@@ -267,7 +264,7 @@ export default function ProjectRag() {
             >
               {[1, 2, 3, 5, 7, 10].map((k) => (
                 <option key={k} value={k} style={{ background: '#1e293b', color: '#fff' }}>
-                  {k} chunks
+                  {k} sources
                 </option>
               ))}
             </select>
@@ -363,7 +360,7 @@ export default function ProjectRag() {
                   <polyline points="2 17 12 22 22 17"></polyline>
                   <polyline points="2 12 12 17 22 12"></polyline>
                 </svg>
-                <span>Ask CodeSage</span>
+                <span>Ask AI</span>
               </>
             )}
           </button>
@@ -375,10 +372,10 @@ export default function ProjectRag() {
         <div className="glass-card" style={{ padding: '2.5rem', textAlign: 'center', marginBottom: '1.5rem' }}>
           <div className="loading-spinner" style={{ margin: '0 auto 1.25rem', width: '40px', height: '40px' }} />
           <h3 style={{ margin: '0 0 0.5rem 0', color: '#f8fafc', fontWeight: 600 }}>
-            CodeSage is analyzing your project...
+            CodeSage AI is analyzing your project...
           </h3>
           <p style={{ margin: 0, color: 'var(--text-secondary, #94a3b8)', fontSize: '0.9rem' }}>
-            Embedding query with Nomic &bull; Searching FAISS index &bull; Orchestrating LangChain context &bull; Querying Gemma 2B
+            Finding relevant code &bull; Synthesizing answer
           </p>
         </div>
       )}
@@ -393,7 +390,7 @@ export default function ProjectRag() {
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
             <div>
-              <div style={{ fontWeight: 600, color: '#fca5a5', marginBottom: '0.25rem' }}>RAG Pipeline Error</div>
+              <div style={{ fontWeight: 600, color: '#fca5a5', marginBottom: '0.25rem' }}>AI Assistant Notice</div>
               <div style={{ fontSize: '0.9rem', color: '#fecaca' }}>{error}</div>
             </div>
           </div>
@@ -410,10 +407,10 @@ export default function ProjectRag() {
                 <span style={{ fontSize: '1.25rem' }}>🤖</span>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#f8fafc' }}>
-                    CodeSage AI Answer
+                    AI Answer
                   </h3>
                   <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                    Generated by {ragResult.model || 'gemma:2b'} &bull; Grounded on {ragResult.sources?.length || 0} retrieved sources
+                    Grounded on {ragResult.sources?.length || 0} project sources
                   </div>
                 </div>
               </div>
@@ -452,11 +449,11 @@ export default function ProjectRag() {
                   <polyline points="14 2 14 8 20 8"></polyline>
                 </svg>
                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#f8fafc' }}>
-                  Retrieved Sources ({ragResult.sources?.length || 0})
+                  Sources ({ragResult.sources?.length || 0})
                 </h3>
               </div>
               <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                Cosine similarity scores via FAISS IndexFlatIP
+                Relevant code references
               </span>
             </div>
 
@@ -527,7 +524,7 @@ export default function ProjectRag() {
                           )}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
-                          Language: {source.language || 'Code'} &bull; Chunk ID: {source.chunk_id}
+                          Language: {source.language || 'Code'}
                         </div>
                       </div>
                     </div>

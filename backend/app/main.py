@@ -10,8 +10,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # -------------------- Python Standard Library ---------------
 
+import logging
 import platform
 import time
+
+logger = logging.getLogger("codesage.main")
 
 
 # Import the SQLAlchemy engine.
@@ -23,6 +26,7 @@ from app.database import engine
 from app.api.auth import router as auth_router
 from app.api.project import router as project_router
 from app.api.ai import router as ai_router
+from app.api.docs import router as docs_router
 
 
 
@@ -46,6 +50,10 @@ app = FastAPI(
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
 
 
@@ -54,6 +62,7 @@ app.add_middleware(
 
     # Allow requests from the React/Vite frontend.
     allow_origins=origins,
+    allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
 
     # Allow cookies and authentication credentials.
     allow_credentials=True,
@@ -73,6 +82,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(project_router, prefix="/api")
 app.include_router(ai_router, prefix="/api")
+app.include_router(docs_router, prefix="/api")
 
 
 
@@ -148,9 +158,8 @@ def database_test():
             }
 
     except Exception as e:
-
-        # Return the database error if the connection fails.
+        logger.error("Database connection check failed: %s", e)
         return {
             "status": "error",
-            "message": str(e)
+            "message": "Database connection failed"
         }

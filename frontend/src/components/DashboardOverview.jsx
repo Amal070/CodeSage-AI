@@ -1,18 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Icon } from './common/Icon';
+import { SkeletonMetric } from './common/Skeleton';
 
 export default function DashboardOverview() {
   const { user, token, logout, BACKEND_URL } = useAuth();
 
-  // Diagnostics & live telemetry
-  const [connectionStatus, setConnectionStatus] = useState('connecting');
-  const [latency, setLatency] = useState(null);
-  const [systemInfo, setSystemInfo] = useState(null);
-  const [probing, setProbing] = useState(false);
   const [userProjects, setUserProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
 
-  // Fetch projects to show real counts
+  // Fetch projects to show real counts and recent project list
   useEffect(() => {
     if (!token) return;
     fetch(`${BACKEND_URL}/api/projects`, {
@@ -25,122 +23,52 @@ export default function DashboardOverview() {
         }
         return res.ok ? res.json() : [];
       })
-      .then((data) => setUserProjects(data))
-      .catch(() => {});
+      .then((data) => setUserProjects(Array.isArray(data) ? data : []))
+      .catch(() => setUserProjects([]))
+      .finally(() => setLoadingProjects(false));
   }, [token, BACKEND_URL, logout]);
 
   const totalFiles = userProjects.reduce((acc, p) => acc + (p.file_count || 0), 0);
 
-  // Metric cards with real Day 5 project data
+  // Application-oriented metrics
   const metrics = [
     {
       id: 'metric-projects',
       label: 'Projects',
       value: String(userProjects.length),
       description: 'Active workspaces',
-      tag: 'Day 5 Live',
+      tag: 'Workspaces',
       tagColor: 'cyan',
-      icon: (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-        </svg>
-      ),
+      icon: 'projects',
     },
     {
       id: 'metric-files',
       label: 'Files Analyzed',
       value: String(totalFiles),
-      description: 'Indexed source files',
-      tag: 'Day 5 Live',
+      description: 'Analyzed source files',
+      tag: 'Source Files',
       tagColor: 'purple',
-      icon: (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-          <polyline points="10 9 9 9 8 9"></polyline>
-        </svg>
-      ),
+      icon: 'files',
     },
     {
-      id: 'metric-quality',
-      label: 'Code Quality',
-      value: '--',
-      description: 'AST diagnostic score',
-      tag: 'Day 6 AST',
+      id: 'metric-docs',
+      label: 'Documentation',
+      value: userProjects.length > 0 ? 'Ready' : '--',
+      description: 'Functions & API guides',
+      tag: 'Auto-Generated',
       tagColor: 'amber',
-      icon: (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-        </svg>
-      ),
+      icon: 'docs',
     },
     {
-      id: 'metric-conversations',
-      label: 'AI Conversations',
-      value: '0',
-      description: 'RAG context sessions',
-      tag: 'Day 7 RAG',
+      id: 'metric-ai-questions',
+      label: 'AI Assistant',
+      value: userProjects.length > 0 ? 'Ready' : 'Idle',
+      description: 'Interactive code Q&A',
+      tag: 'Ask AI',
       tagColor: 'emerald',
-      icon: (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-        </svg>
-      ),
+      icon: 'chat',
     },
   ];
-
-  const probeBackend = useCallback(async () => {
-    setProbing(true);
-    const startTime = performance.now();
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/system-info`);
-      const duration = Math.round(performance.now() - startTime);
-      setLatency(duration);
-      if (res.ok) {
-        const data = await res.json();
-        setSystemInfo(data);
-        setConnectionStatus('connected');
-      } else {
-        setConnectionStatus('error');
-      }
-    } catch {
-      setConnectionStatus('disconnected');
-    } finally {
-      setProbing(false);
-    }
-  }, [BACKEND_URL]);
-
-  useEffect(() => {
-    let active = true;
-    const initialProbe = async () => {
-      const startTime = performance.now();
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/system-info`);
-        const duration = Math.round(performance.now() - startTime);
-        if (!active) return;
-        setLatency(duration);
-        if (res.ok) {
-          const data = await res.json();
-          if (!active) return;
-          setSystemInfo(data);
-          setConnectionStatus('connected');
-        } else {
-          setConnectionStatus('error');
-        }
-      } catch {
-        if (active) setConnectionStatus('disconnected');
-      }
-    };
-
-    initialProbe();
-    const interval = setInterval(probeBackend, 15000);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, [BACKEND_URL, probeBackend]);
 
   const userName = user?.name || 'Developer';
 
@@ -158,28 +86,21 @@ export default function DashboardOverview() {
           </div>
 
           <h1 className="welcome-title" id="dashboard-welcome-title">
-            Welcome back, {userName} 👋
+            Welcome to CodeSage AI, {userName} 👋
           </h1>
           <p className="welcome-subtitle">
-            AI-Powered Code Intelligence &amp; Architecture Dashboard. Monitor workspace metrics, inspect runtime telemetry, and review security schemas.
+            Understand, analyze, and document your software projects with AI.
           </p>
         </div>
 
         <div className="welcome-hero-actions">
           <Link to="/dashboard/profile" className="btn btn-secondary btn-sm" id="welcome-view-profile-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
+            <Icon name="profile" size={16} />
             <span>View Profile</span>
           </Link>
 
           <Link to="/dashboard/projects" className="btn btn-primary btn-sm" id="welcome-view-projects-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
+            <Icon name="upload" size={16} />
             <span>Upload Project</span>
           </Link>
         </div>
@@ -188,185 +109,259 @@ export default function DashboardOverview() {
       {/* Quick Status Bar */}
       <div className="overview-status-bar glass-card">
         <div className="status-bar-item">
-          <span className={`metric-dot ${connectionStatus}`}></span>
+          <span className="metric-dot connected"></span>
           <div className="status-bar-text">
-            <span className="status-bar-label">Backend Telemetry</span>
-            <span className="status-bar-value font-mono capitalize">{connectionStatus}</span>
+            <span className="status-bar-label">Platform Status</span>
+            <span className="status-bar-value font-mono">Ready</span>
           </div>
         </div>
 
         <div className="status-bar-item">
           <span className="metric-dot purple"></span>
           <div className="status-bar-text">
-            <span className="status-bar-label">Auth Protocol</span>
-            <span className="status-bar-value font-mono">JWT &bull; HS256</span>
+            <span className="status-bar-label">Code Search</span>
+            <span className="status-bar-value font-mono">Enabled</span>
           </div>
         </div>
 
         <div className="status-bar-item">
           <span className="metric-dot cyan"></span>
           <div className="status-bar-text">
-            <span className="status-bar-label">Ping Latency</span>
-            <span className="status-bar-value font-mono">
-              {latency !== null ? `${latency} ms` : '--'}
-            </span>
+            <span className="status-bar-label">AI Assistant</span>
+            <span className="status-bar-value font-mono">Available</span>
           </div>
         </div>
 
         <div className="status-bar-item">
           <span className="metric-dot emerald"></span>
           <div className="status-bar-text">
-            <span className="status-bar-label">Database</span>
-            <span className="status-bar-value font-mono">PostgreSQL</span>
+            <span className="status-bar-label">Workspace Session</span>
+            <span className="status-bar-value font-mono">Active</span>
           </div>
         </div>
       </div>
 
-      {/* Overview Metrics Cards Grid (Day 4 UI Placeholders for Day 5+ APIs) */}
-      <section className="overview-metrics-grid">
-        {metrics.map((m) => (
-          <div key={m.id} className="card glass-card metric-card" id={m.id}>
-            <div className="metric-card-top">
-              <div className={`metric-icon-wrap ${m.tagColor}`}>{m.icon}</div>
-              <span className={`pill-badge pill-${m.tagColor}`}>{m.tag}</span>
+      {/* Overview Metrics Cards Grid (with Skeleton Fallback) */}
+      {loadingProjects ? (
+        <SkeletonMetric count={4} />
+      ) : (
+        <section className="overview-metrics-grid">
+          {metrics.map((m) => (
+            <div key={m.id} className="card glass-card metric-card" id={m.id}>
+              <div className="metric-card-top">
+                <div className={`metric-icon-wrap ${m.tagColor}`}>
+                  <Icon name={m.icon} size={22} />
+                </div>
+                <span className={`pill-badge pill-${m.tagColor}`}>{m.tag}</span>
+              </div>
+              <div className="metric-card-body">
+                <div className="metric-number font-mono">{m.value}</div>
+                <div className="metric-name">{m.label}</div>
+                <p className="metric-sub">{m.description}</p>
+              </div>
             </div>
-            <div className="metric-card-body">
-              <div className="metric-number font-mono">{m.value}</div>
-              <div className="metric-name">{m.label}</div>
-              <p className="metric-sub">{m.description}</p>
-            </div>
+          ))}
+        </section>
+      )}
+
+      {/* Day 23 Enhancement: Recent Projects Section */}
+      <section className="dashboard-recent-projects glass-card" id="dashboard-recent-projects">
+        <div className="recent-projects-header">
+          <h3>
+            <Icon name="projects" size={20} />
+            <span>Recent Projects</span>
+          </h3>
+          <Link to="/dashboard/projects" className="btn btn-secondary btn-sm" id="view-all-projects-btn">
+            <span>Upload New</span>
+            <Icon name="chevron-right" size={14} />
+          </Link>
+        </div>
+
+        {loadingProjects ? (
+          <div className="recent-projects-grid">
+            <div className="skeleton-card" style={{ height: '110px' }} />
+            <div className="skeleton-card" style={{ height: '110px' }} />
           </div>
-        ))}
+        ) : userProjects.length === 0 ? (
+          <div className="empty-projects-state">
+            <div className="empty-icon-wrap">
+              <Icon name="upload" size={24} />
+            </div>
+            <div className="empty-text-wrap">
+              <h4 className="empty-state-title">No projects uploaded yet</h4>
+              <p className="empty-state-desc text-secondary">
+                Upload your first codebase archive (ZIP) to unpack, explore code, and chat with AI.
+              </p>
+            </div>
+            <Link to="/dashboard/projects" className="btn btn-primary btn-sm">
+              <Icon name="upload" size={16} />
+              <span>Upload Project ZIP</span>
+            </Link>
+          </div>
+        ) : (
+          <div className="recent-projects-grid">
+            {userProjects.slice(0, 6).map((proj) => (
+              <div key={proj.id} className="recent-project-card glass-card">
+                <div className="recent-project-top">
+                  <div className="recent-project-icon">
+                    <Icon name="folder" size={20} />
+                  </div>
+                  <div className="recent-project-info">
+                    <h4 className="recent-project-name" title={proj.name}>
+                      {proj.name}
+                    </h4>
+                    <div className="recent-project-meta font-mono">
+                      <span>{proj.file_count || 0} files</span>
+                      <span>&bull;</span>
+                      <span className="capitalize">{proj.status || 'Active'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="recent-project-actions">
+                  <Link
+                    to={`/dashboard/projects/${proj.id}/analysis`}
+                    className="btn btn-ghost btn-sm"
+                    title="View Project Overview"
+                  >
+                    <Icon name="analysis" size={14} />
+                    <span>Analyze Project</span>
+                  </Link>
+
+                  <Link
+                    to={`/dashboard/projects/${proj.id}/explorer`}
+                    className="btn btn-ghost btn-sm"
+                    title="Explore Code"
+                  >
+                    <Icon name="files" size={14} />
+                    <span>Explore Code</span>
+                  </Link>
+
+                  <Link
+                    to={`/dashboard/projects/${proj.id}/chat`}
+                    className="btn btn-primary btn-sm"
+                    title="Ask AI about codebase"
+                  >
+                    <Icon name="chat" size={14} />
+                    <span>Ask AI</span>
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* Two-Column Middle Section: Host Environment & Quick Actions */}
-      <div className="overview-split-grid">
-        {/* Host Execution Environment Card */}
+      {/* Two-Column Middle Section: Application Features & Quick Navigation */}
+      <div className="overview-split-grid" style={{ marginTop: '24px' }}>
+        {/* Application Capabilities Card */}
         <div className="card glass-card host-env-card">
           <div className="card-header">
             <div className="card-title-group">
               <div className="card-icon cyan">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
-                  <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
-                  <line x1="6" y1="6" x2="6.01" y2="6"></line>
-                  <line x1="6" y1="18" x2="6.01" y2="18"></line>
-                </svg>
+                <Icon name="sparkles" size={18} />
               </div>
               <div>
-                <h3>Host Runtime Diagnostics</h3>
-                <p className="card-desc">Live FastAPI environment telemetry</p>
+                <h3>Application Capabilities</h3>
+                <p className="card-desc">What CodeSage AI can do for your software projects</p>
               </div>
             </div>
-
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={probeBackend}
-              disabled={probing}
-              id="refresh-diagnostics-btn"
-              title="Refresh telemetry"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={probing ? 'animate-spin' : ''}>
-                <path d="M23 4v6h-6"></path>
-                <path d="M1 20v-6h6"></path>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-              </svg>
-              <span>{probing ? 'Probing...' : 'Probe'}</span>
-            </button>
           </div>
 
-          <div className="env-details-grid">
-            <div className="env-item">
-              <span className="env-label">Backend Framework</span>
-              <span className="env-value font-mono">{systemInfo?.framework || 'FastAPI'}</span>
-            </div>
-            <div className="env-item">
-              <span className="env-label">Python Runtime</span>
-              <span className="env-value font-mono">{systemInfo?.python_version || '--'}</span>
-            </div>
-            <div className="env-item">
-              <span className="env-label">Host OS</span>
-              <span className="env-value font-mono">{systemInfo?.platform || '--'}</span>
-            </div>
-            <div className="env-item">
-              <span className="env-label">Server Uptime</span>
-              <span className="env-value font-mono text-emerald">
-                {systemInfo?.uptime_seconds !== undefined
-                  ? `${systemInfo.uptime_seconds}s active`
-                  : '--'}
-              </span>
-            </div>
+          <div className="quick-actions-list" style={{ marginTop: '12px' }}>
+            <Link to="/dashboard/explorer" className="action-row-item">
+              <div className="action-row-left">
+                <div className="action-icon cyan">
+                  <Icon name="code" size={16} />
+                </div>
+                <div>
+                  <h4>Explore &amp; Understand Code</h4>
+                  <p>Browse directory trees, inspect source files, and view code structure</p>
+                </div>
+              </div>
+              <Icon name="chevron-right" size={16} />
+            </Link>
+
+            <Link to="/dashboard/ai" className="action-row-item">
+              <div className="action-row-left">
+                <div className="action-icon purple">
+                  <Icon name="chat" size={16} />
+                </div>
+                <div>
+                  <h4>Ask AI Assistant</h4>
+                  <p>Ask natural-language questions to understand architecture and functions</p>
+                </div>
+              </div>
+              <Icon name="chevron-right" size={16} />
+            </Link>
+
+            <Link to="/dashboard/export" className="action-row-item">
+              <div className="action-row-left">
+                <div className="action-icon emerald">
+                  <Icon name="download" size={16} />
+                </div>
+                <div>
+                  <h4>Export Project Documentation</h4>
+                  <p>Generate and download comprehensive project guides as Markdown or PDF</p>
+                </div>
+              </div>
+              <Icon name="chevron-right" size={16} />
+            </Link>
           </div>
         </div>
 
-        {/* Quick Actions Panel */}
+        {/* Quick Navigation Panel */}
         <div className="card glass-card quick-actions-card">
           <div className="card-header">
             <div className="card-title-group">
               <div className="card-icon purple">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                </svg>
+                <Icon name="projects" size={18} />
               </div>
               <div>
                 <h3>Platform Navigation</h3>
-                <p className="card-desc">Quick shortcuts to authenticated features</p>
+                <p className="card-desc">Quick shortcuts to project workspaces</p>
               </div>
             </div>
           </div>
 
           <div className="quick-actions-list">
-            <Link to="/dashboard/profile" className="action-row-item" id="quick-action-profile">
-              <div className="action-row-left">
-                <div className="action-icon purple">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                </div>
-                <div>
-                  <h4>User Profile &amp; Token Verification</h4>
-                  <p>Inspect active JWT session and verify <code>/api/auth/me</code></p>
-                </div>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </Link>
-
-            <Link to="/dashboard/security" className="action-row-item" id="quick-action-security">
-              <div className="action-row-left">
-                <div className="action-icon cyan">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                  </svg>
-                </div>
-                <div>
-                  <h4>Security &amp; Database Architecture</h4>
-                  <p>View PostgreSQL schema definitions and bcrypt hashing standards</p>
-                </div>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </Link>
-
             <Link to="/dashboard/projects" className="action-row-item" id="quick-action-projects">
               <div className="action-row-left">
-                <div className="action-icon emerald">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                  </svg>
+                <div className="action-icon cyan">
+                  <Icon name="upload" size={16} />
                 </div>
                 <div>
-                  <h4>Project Management Roadmap</h4>
-                  <p>Learn about upcoming Day 5 repository ingestion features</p>
+                  <h4>Upload &amp; Manage Projects</h4>
+                  <p>Upload new codebase archives and manage existing projects</p>
                 </div>
               </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
+              <Icon name="chevron-right" size={16} />
+            </Link>
+
+            <Link to="/dashboard/api-docs" className="action-row-item" id="quick-action-api-docs">
+              <div className="action-row-left">
+                <div className="action-icon emerald">
+                  <Icon name="api" size={16} />
+                </div>
+                <div>
+                  <h4>API Documentation</h4>
+                  <p>Inspect endpoints, schemas, and generate developer guides</p>
+                </div>
+              </div>
+              <Icon name="chevron-right" size={16} />
+            </Link>
+
+            <Link to="/dashboard/settings" className="action-row-item" id="quick-action-settings">
+              <div className="action-row-left">
+                <div className="action-icon purple">
+                  <Icon name="settings" size={16} />
+                </div>
+                <div>
+                  <h4>Settings &amp; Appearance</h4>
+                  <p>Customize themes, notifications, and view developer telemetry</p>
+                </div>
+              </div>
+              <Icon name="chevron-right" size={16} />
             </Link>
           </div>
         </div>

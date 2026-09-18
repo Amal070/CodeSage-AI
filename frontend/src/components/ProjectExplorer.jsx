@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { SkeletonTree, SkeletonCode } from './common/Skeleton';
+import LoadingState from './common/LoadingState';
+import { useToast } from './common/Toast';
 
 export default function ProjectExplorer() {
   const { projectId } = useParams();
@@ -8,6 +11,7 @@ export default function ProjectExplorer() {
   const queryFile = searchParams.get('file');
   const { token, logout, BACKEND_URL } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
 
   // Project state
   const [project, setProject] = useState(null);
@@ -33,6 +37,13 @@ export default function ProjectExplorer() {
   const [structureData, setStructureData] = useState(null);
   const [loadingStructure, setLoadingStructure] = useState(false);
   const [structureError, setStructureError] = useState(null);
+
+  // Day 20: Function doc modal state
+  const [docModalFn, setDocModalFn] = useState(null);
+  const [docModalData, setDocModalData] = useState(null);
+  const [docModalLoading, setDocModalLoading] = useState(false);
+  const [docModalError, setDocModalError] = useState(null);
+  const [docModalCopied, setDocModalCopied] = useState(false);
 
   // Mobile layout toggle (tree vs code)
   const [mobileActiveTab, setMobileActiveTab] = useState('tree'); // 'tree' or 'code'
@@ -272,10 +283,65 @@ export default function ProjectExplorer() {
     try {
       await navigator.clipboard.writeText(fileData.content);
       setCopySuccess(true);
+      toast.success('Code copied to clipboard');
       setTimeout(() => setCopySuccess(false), 2000);
     } catch {
       // Fallback
     }
+  };
+
+  // Day 20: Function Documentation Modal Handlers
+  const handleOpenDocModal = async (fn) => {
+    setDocModalFn(fn);
+    setDocModalData(null);
+    setDocModalError(null);
+    setDocModalLoading(true);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/projects/${projectId}/functions/document`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          file_path: selectedPath,
+          function_name: fn.name,
+          start_line: fn.line_start,
+          end_line: fn.line_end,
+          parent_class: fn.parent_class,
+        }),
+      });
+
+      if (res.status === 401) {
+        logout();
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.detail || 'Failed to generate function documentation.');
+      }
+      setDocModalData(data);
+    } catch (err) {
+      setDocModalError(err.message || 'Error generating documentation.');
+    } finally {
+      setDocModalLoading(false);
+    }
+  };
+
+  const handleCloseDocModal = () => {
+    setDocModalFn(null);
+    setDocModalData(null);
+    setDocModalError(null);
+  };
+
+  const handleCopyModalMarkdown = () => {
+    if (!docModalData?.documentation) return;
+    navigator.clipboard.writeText(docModalData.documentation);
+    setDocModalCopied(true);
+    setTimeout(() => setDocModalCopied(false), 2000);
   };
 
   // Prepare line numbers and lines
@@ -395,11 +461,11 @@ export default function ProjectExplorer() {
 
   if (loadingProject) {
     return (
-      <div className="explorer-loading-state glass-card">
-        <div className="loading-spinner"></div>
-        <h3>Loading project...</h3>
-        <p className="text-secondary">Retrieving workspace details from CodeSage AI</p>
-      </div>
+      <LoadingState
+        title="Loading project..."
+        message="Retrieving workspace details from CodeSage AI"
+        id="explorer-loading-state"
+      />
     );
   }
 
@@ -504,17 +570,32 @@ export default function ProjectExplorer() {
           {/* Day 15: AI Chat Link */}
           <Link
             to={`/dashboard/projects/${projectId}/chat`}
-            className="btn btn-primary btn-sm"
+            className="btn btn-secondary btn-sm"
             id="project-chat-btn"
-            style={{
-              background: 'linear-gradient(135deg, #9333ea, #6366f1)',
-              borderColor: '#a855f7',
-            }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
             <span>AI Chat</span>
+          </Link>
+          {/* Day 20: Function Docs Link */}
+          <Link
+            to={`/dashboard/projects/${projectId}/docs`}
+            className="btn btn-primary btn-sm"
+            id="project-docs-btn"
+            style={{
+              background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+              borderColor: '#38bdf8',
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span>Function Docs</span>
           </Link>
           <Link to="/dashboard/projects" className="btn btn-ghost btn-sm" id="back-to-projects-btn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -577,10 +658,7 @@ export default function ProjectExplorer() {
 
           <div className="tree-scrollable-area" id="file-tree-container">
             {loadingTree ? (
-              <div className="tree-loading">
-                <div className="loading-spinner-sm"></div>
-                <span>Loading files...</span>
-              </div>
+              <SkeletonTree items={8} />
             ) : treeError ? (
               <div className="tree-error">
                 <span>{treeError}</span>
@@ -696,7 +774,7 @@ export default function ProjectExplorer() {
                 <div className="code-state-box loading" id="structure-loading-state">
                   <div className="loading-spinner"></div>
                   <h4>Analyzing code structure...</h4>
-                  <p className="text-secondary font-mono">Running Tree-sitter AST parser on {selectedPath}</p>
+                  <p className="text-secondary font-mono">Analyzing code structure in {selectedPath}...</p>
                 </div>
               ) : structureError ? (
                 <div className="code-state-box error" id="structure-error-state">
@@ -729,7 +807,7 @@ export default function ProjectExplorer() {
                     </svg>
                   </div>
                   <h3>Code Structure</h3>
-                  <p className="text-secondary">Click "Analyze Structure" above to parse functions, classes, and imports with Tree-sitter.</p>
+                  <p className="text-secondary">Click "Analyze Structure" above to view functions, classes, and imports.</p>
                   <button
                     type="button"
                     className="btn btn-primary btn-sm mt-2"
@@ -793,8 +871,22 @@ export default function ProjectExplorer() {
                                   </span>
                                 )}
                               </div>
-                              <div className="item-line font-mono">
-                                {fn.line_start === fn.line_end ? `line ${fn.line_start}` : `line ${fn.line_start}–${fn.line_end}`}
+                              <div className="item-line-actions">
+                                <span className="item-line font-mono">
+                                  {fn.line_start === fn.line_end ? `line ${fn.line_start}` : `line ${fn.line_start}–${fn.line_end}`}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="btn btn-xs btn-outline doc-action-btn"
+                                  onClick={() => handleOpenDocModal(fn)}
+                                  title={`Generate AI Documentation for ${fn.name}`}
+                                >
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                  </svg>
+                                  <span>Document</span>
+                                </button>
                               </div>
                             </div>
                           ))
@@ -868,10 +960,8 @@ export default function ProjectExplorer() {
                 </div>
               )
             ) : loadingFile ? (
-              <div className="code-state-box loading">
-                <div className="loading-spinner"></div>
-                <h4>Loading file...</h4>
-                <span className="font-mono text-secondary">{selectedPath}</span>
+              <div style={{ padding: '16px' }}>
+                <SkeletonCode lines={16} />
               </div>
             ) : fileError ? (
               <div className="code-state-box error">
@@ -952,6 +1042,92 @@ export default function ProjectExplorer() {
           </div>
         </main>
       </div>
+
+      {/* Day 20: Function Documentation Drawer/Modal */}
+      {docModalFn && (
+        <div className="doc-modal-backdrop animate-fade-in" onClick={handleCloseDocModal}>
+          <div className="doc-modal-dialog glass-card" onClick={(e) => e.stopPropagation()}>
+            <div className="doc-modal-header">
+              <div className="doc-modal-title-group">
+                <span className="badge badge-accent uppercase font-mono text-xs">AI Documentation</span>
+                <h3 className="doc-modal-fn-name font-mono">{docModalFn.name}()</h3>
+                <span className="text-secondary font-mono text-xs">
+                  {selectedPath} &bull; Lines {docModalFn.line_start}–{docModalFn.line_end}
+                </span>
+              </div>
+
+              <div className="doc-modal-actions">
+                {docModalData?.documentation && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-primary copy-btn"
+                    onClick={handleCopyModalMarkdown}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      {docModalCopied ? (
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      ) : (
+                        <>
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </>
+                      )}
+                    </svg>
+                    <span>{docModalCopied ? 'Copied!' : 'Copy Markdown'}</span>
+                  </button>
+                )}
+                <Link
+                  to={`/dashboard/projects/${projectId}/docs?fn=${encodeURIComponent(docModalFn.name)}&file=${encodeURIComponent(selectedPath || '')}`}
+                  className="btn btn-sm btn-ghost"
+                  title="Open in dedicated Function Docs workspace"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                  </svg>
+                  <span>Full View</span>
+                </Link>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost close-btn"
+                  onClick={handleCloseDocModal}
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+
+            <div className="doc-modal-body">
+              {docModalLoading ? (
+                <div className="modal-generating-state">
+                  <div className="loading-spinner"></div>
+                  <h4>Generating documentation with AI...</h4>
+                  <p className="text-secondary font-mono text-xs">
+                    Analyzing code structure &bull; Extracting context &bull; Synthesizing documentation
+                  </p>
+                </div>
+              ) : docModalError ? (
+                <div className="modal-error-state text-error">
+                  <h4>Failed to generate documentation</h4>
+                  <p>{docModalError}</p>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-ghost mt-2"
+                    onClick={() => handleOpenDocModal(docModalFn)}
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : docModalData ? (
+                <div className="modal-doc-scroll">
+                  <pre className="markdown-pre">{docModalData.documentation}</pre>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

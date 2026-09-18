@@ -1,10 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import heroImg from '../assets/hero.png';
+import CodeSage3DHero from './CodeSage3DHero';
+import Card3DTilt from './common/Card3DTilt';
 
 export default function LandingPage() {
-  const { isAuthenticated, BACKEND_URL } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // If already authenticated, redirect to /dashboard
@@ -13,60 +15,6 @@ export default function LandingPage() {
       navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, navigate]);
-
-  const [connectionStatus, setConnectionStatus] = useState('connecting');
-  const [latency, setLatency] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const checkConnection = useCallback(async (endpoint = '/api/system-info') => {
-    setLoading(true);
-    const startTime = performance.now();
-    try {
-      const response = await fetch(`${BACKEND_URL}${endpoint}`);
-      const duration = Math.round(performance.now() - startTime);
-      setLatency(duration);
-
-      if (response.ok) {
-        setConnectionStatus('connected');
-      } else {
-        setConnectionStatus('error');
-      }
-    } catch {
-      setConnectionStatus('disconnected');
-      setLatency(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [BACKEND_URL]);
-
-  useEffect(() => {
-    let active = true;
-    const initialProbe = async () => {
-      const startTime = performance.now();
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/system-info`);
-        const duration = Math.round(performance.now() - startTime);
-        if (!active) return;
-        setLatency(duration);
-        if (response.ok) {
-          setConnectionStatus('connected');
-        } else {
-          setConnectionStatus('error');
-        }
-      } catch {
-        if (active) setConnectionStatus('disconnected');
-      }
-    };
-
-    initialProbe();
-    const interval = setInterval(() => {
-      checkConnection('/health');
-    }, 10000);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, [BACKEND_URL, checkConnection]);
 
   return (
     <div className="dashboard-container">
@@ -118,162 +66,196 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <main className="landing-main-view animate-fade-in">
-        <section className="landing-hero-section">
-          <div className="landing-badge">
-            <span className="sparkle-icon">✨</span>
-            <span>Next-Gen DevSecOps &amp; Code Intelligence</span>
+        <section className="landing-hero-section landing-hero-grid">
+          <div className="hero-content-col">
+            <div className="landing-badge">
+              <span className="sparkle-icon">✨</span>
+              <span>Intelligent Code Understanding Platform</span>
+            </div>
+            <h1 className="landing-hero-title">
+              Understand Your Code. <span className="title-gradient">Faster.</span>
+            </h1>
+            <p className="landing-hero-description">
+              AI-powered code understanding for your software projects. Explore project structure, ask questions about your codebase, search code intelligently, and generate documentation in seconds.
+            </p>
+
+            <div className="landing-actions-group">
+              <Link to="/register" className="btn btn-primary btn-hero-cta" id="hero-get-started-btn">
+                <span>Get Started</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </Link>
+
+              <Link to="/login" className="btn btn-secondary btn-hero-secondary" id="hero-sign-in-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                  <polyline points="10 17 15 12 10 7"></polyline>
+                  <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+                <span>Sign In</span>
+              </Link>
+            </div>
           </div>
-          <h1 className="landing-hero-title">
-            Secure Code Intelligence &amp; <span className="title-gradient">Diagnostic Platform</span>
-          </h1>
-          <p className="landing-hero-description">
-            A high-performance environment built with FastAPI dependency injection, cryptographic JWT bearer tokens, and PostgreSQL schema versioning. Monitor performance telemetry, query protected endpoints, and safeguard your engineering workflows.
-          </p>
 
-          <div className="landing-actions-group">
-            <Link to="/register" className="btn btn-primary btn-hero-cta" id="hero-get-started-btn">
-              <span>Register Free Account</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </Link>
-
-            <Link to="/login" className="btn btn-secondary btn-hero-secondary" id="hero-sign-in-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                <polyline points="10 17 15 12 10 7"></polyline>
-                <line x1="15" y1="12" x2="3" y2="12"></line>
-              </svg>
-              <span>Sign In / Login</span>
-            </Link>
-
-            <button
-              type="button"
-              className="btn btn-ghost btn-hero-probe"
-              onClick={() => checkConnection('/api/system-info')}
-              disabled={loading}
-              id="hero-probe-btn"
-              title="Check live API status"
-            >
-              <span className={`status-dot-mini ${connectionStatus}`}></span>
-              <span>{loading ? 'Probing...' : 'Probe Live API'}</span>
-            </button>
+          <div className="hero-3d-col">
+            <CodeSage3DHero />
           </div>
         </section>
 
-        {/* Feature Highlights Grid */}
-        <section className="landing-features-grid">
-          <div className="landing-feature-card glass-card">
-            <div className="feature-card-header">
-              <div className="feature-icon-wrap bg-purple">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-              </div>
-              <span className="feature-tag">Day 3 Security</span>
-            </div>
-            <h3>JWT Dependency Injection</h3>
-            <p>HMAC-SHA256 bearer tokens guarding FastAPI routers with automatic payload verification and token expiry handling.</p>
-          </div>
-
-          <div className="landing-feature-card glass-card">
-            <div className="feature-card-header">
-              <div className="feature-icon-wrap bg-cyan">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
-                  <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
-                  <line x1="6" y1="6" x2="6.01" y2="6" />
-                  <line x1="6" y1="18" x2="6.01" y2="18" />
-                </svg>
-              </div>
-              <span className="feature-tag">Real-Time</span>
-            </div>
-            <h3>Diagnostic Telemetry</h3>
-            <p>Live WebSocket and HTTP telemetry probes tracking database connection pools and sub-millisecond response latency.</p>
-          </div>
-
-          <div className="landing-feature-card glass-card">
-            <div className="feature-card-header">
-              <div className="feature-icon-wrap bg-indigo">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-              </div>
-              <span className="feature-tag">PostgreSQL</span>
-            </div>
-            <h3>Alembic Schema Safety</h3>
-            <p>Relational database integrity managed through versioned migrations with zero plaintext password persistence.</p>
-          </div>
-        </section>
-
-        {/* Live Interactive Telemetry Showcase Card */}
-        <section className="landing-preview-section">
-          <div className="mock-dashboard-preview glass-card landing-preview-card">
-            <div className="mock-header">
-              <div className="mock-dots">
-                <span className="dot red"></span>
-                <span className="dot yellow"></span>
-                <span className="dot green"></span>
-              </div>
-              <div className="mock-address-bar">codesage-ai-api.local/health</div>
-              <div className="mock-badge-live">
-                {connectionStatus === 'connected' ? 'Backend Live & Healthy' : 'Backend Telemetry Active'}
-              </div>
-            </div>
-            <div className="mock-body">
-              <div className="mock-stats-grid">
-                <div className="mock-stat-box">
-                  <span className="stat-label">ROUNDTRIP PING</span>
-                  <span className="stat-val text-green">{latency !== null ? `${latency}ms` : '12ms'}</span>
-                  <span className="stat-trend">&darr; Active Connection</span>
-                </div>
-                <div className="mock-stat-box">
-                  <span className="stat-label">DB ENGINE</span>
-                  <span className="stat-val text-cyan">PostgreSQL</span>
-                  <span className="stat-trend text-glow">codesage_db</span>
-                </div>
-                <div className="mock-stat-box">
-                  <span className="stat-label">AUTH PROTOCOL</span>
-                  <span className="stat-val text-purple font-mono">JWT &bull; HS256</span>
-                  <span className="stat-trend">Bcrypt Salted</span>
-                </div>
-              </div>
-              <div className="mock-graph-area">
-                <div className="graph-y-axis">
-                  <span>100ms</span>
-                  <span>50ms</span>
-                  <span>0ms</span>
-                </div>
-                <div className="graph-visual">
-                  <svg viewBox="0 0 300 80" className="sparkline-svg">
-                    <defs>
-                      <linearGradient id="sparkline-grad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.4" />
-                        <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
-                      </linearGradient>
-                      <linearGradient id="sparkline-grad-stroke" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="#a855f7" />
-                        <stop offset="100%" stopColor="#06b6d4" />
-                      </linearGradient>
-                    </defs>
-                    <path
-                      d="M 0 50 Q 30 20 60 45 T 120 15 T 180 35 T 240 10 T 300 25"
-                      fill="none"
-                      stroke="url(#sparkline-grad-stroke)"
-                      strokeWidth="2.5"
-                    />
-                    <path
-                      d="M 0 50 Q 30 20 60 45 T 120 15 T 180 35 T 240 10 T 300 25 L 300 80 L 0 80 Z"
-                      fill="url(#sparkline-grad)"
-                    />
-                    <circle cx="240" cy="10" r="4" fill="#06b6d4" className="glowing-node-graph" />
+        {/* Feature Highlights Grid per Section 22 with 3D Tilt */}
+        <section className="landing-features-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+          <Card3DTilt maxTilt={8} scale={1.02} className="tilt-feature-wrapper">
+            <div className="landing-feature-card glass-card">
+              <div className="feature-card-header">
+                <div className="feature-icon-wrap bg-purple">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                   </svg>
                 </div>
+                <span className="feature-tag">AI Assistant</span>
+              </div>
+              <h3>Understand Code</h3>
+              <p>Ask AI questions about your project and understand your software architecture and functions faster.</p>
+            </div>
+          </Card3DTilt>
+
+          <Card3DTilt maxTilt={8} scale={1.02} className="tilt-feature-wrapper">
+            <div className="landing-feature-card glass-card">
+              <div className="feature-card-header">
+                <div className="feature-icon-wrap bg-cyan">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                  </svg>
+                </div>
+                <span className="feature-tag">Overview</span>
+              </div>
+              <h3>Analyze Projects</h3>
+              <p>Get a clear overview of your software project structure, languages, folders, and statistics.</p>
+            </div>
+          </Card3DTilt>
+
+          <Card3DTilt maxTilt={8} scale={1.02} className="tilt-feature-wrapper">
+            <div className="landing-feature-card glass-card">
+              <div className="feature-card-header">
+                <div className="feature-icon-wrap bg-indigo">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </div>
+                <span className="feature-tag">Fast Search</span>
+              </div>
+              <h3>Search Code</h3>
+              <p>Find relevant code quickly using natural language queries across all files in your project.</p>
+            </div>
+          </Card3DTilt>
+
+          <Card3DTilt maxTilt={8} scale={1.02} className="tilt-feature-wrapper">
+            <div className="landing-feature-card glass-card">
+              <div className="feature-card-header">
+                <div className="feature-icon-wrap bg-emerald">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                  </svg>
+                </div>
+                <span className="feature-tag">Automation</span>
+              </div>
+              <h3>Generate Documentation</h3>
+              <p>Create useful documentation automatically for functions, classes, and REST API endpoints.</p>
+            </div>
+          </Card3DTilt>
+
+          <Card3DTilt maxTilt={8} scale={1.02} className="tilt-feature-wrapper">
+            <div className="landing-feature-card glass-card">
+              <div className="feature-card-header">
+                <div className="feature-icon-wrap bg-amber">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                </div>
+                <span className="feature-tag">Export</span>
+              </div>
+              <h3>Export Documentation</h3>
+              <p>Download project documentation and API references seamlessly as Markdown or PDF files.</p>
+            </div>
+          </Card3DTilt>
+        </section>
+
+        {/* Live Interactive Application Preview Showcase Card with 3D Depth */}
+        <section className="landing-preview-section">
+          <Card3DTilt maxTilt={5} scale={1.01} className="tilt-preview-wrapper">
+            <div className="mock-dashboard-preview glass-card landing-preview-card">
+              <div className="mock-header">
+                <div className="mock-dots">
+                  <span className="dot red"></span>
+                  <span className="dot yellow"></span>
+                  <span className="dot green"></span>
+                </div>
+                <div className="mock-address-bar">codesage-ai.app/workspace</div>
+                <div className="mock-badge-live">
+                  CodeSage AI Workspace Ready
+                </div>
+              </div>
+              <div className="mock-body">
+                <div className="mock-stats-grid">
+                  <div className="mock-stat-box">
+                    <span className="stat-label">EXPLORE CODE</span>
+                    <span className="stat-val text-green">Interactive</span>
+                    <span className="stat-trend">&darr; Code Explorer Ready</span>
+                  </div>
+                  <div className="mock-stat-box">
+                    <span className="stat-label">AI ASSISTANT</span>
+                    <span className="stat-val text-cyan">Active</span>
+                    <span className="stat-trend text-glow">Natural Language Q&amp;A</span>
+                  </div>
+                  <div className="mock-stat-box">
+                    <span className="stat-label">DOCUMENTATION</span>
+                    <span className="stat-val text-purple font-mono">Auto-Gen</span>
+                    <span className="stat-trend">Markdown &bull; PDF</span>
+                  </div>
+                </div>
+                <div className="mock-graph-area">
+                  <div className="graph-y-axis">
+                    <span>100ms</span>
+                    <span>50ms</span>
+                    <span>0ms</span>
+                  </div>
+                  <div className="graph-visual">
+                    <svg viewBox="0 0 300 80" className="sparkline-svg">
+                      <defs>
+                        <linearGradient id="sparkline-grad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.4" />
+                          <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
+                        </linearGradient>
+                        <linearGradient id="sparkline-grad-stroke" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#a855f7" />
+                          <stop offset="100%" stopColor="#06b6d4" />
+                        </linearGradient>
+                      </defs>
+                      <path
+                        d="M 0 50 Q 30 20 60 45 T 120 15 T 180 35 T 240 10 T 300 25"
+                        fill="none"
+                        stroke="url(#sparkline-grad-stroke)"
+                        strokeWidth="2.5"
+                      />
+                      <path
+                        d="M 0 50 Q 30 20 60 45 T 120 15 T 180 35 T 240 10 T 300 25 L 300 80 L 0 80 Z"
+                        fill="url(#sparkline-grad)"
+                      />
+                      <circle cx="240" cy="10" r="4" fill="#06b6d4" className="glowing-node-graph" />
+                    </svg>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          </Card3DTilt>
         </section>
 
         {/* Quick Action Footer Strip */}

@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function SecurityArchitecture() {
   const tables = [
     {
@@ -22,7 +20,7 @@ export default function SecurityArchitecture() {
     },
     {
       name: 'uploaded_files',
-      purpose: 'Parsed source files and vector embeddings metadata',
+      purpose: 'Parsed source files and code understanding metadata',
       columns: ['id (PK)', 'name', 'path', 'file_type', 'size', 'content', 'project_id (FK)', 'created_at'],
       badge: 'Day 2 Schema',
     },

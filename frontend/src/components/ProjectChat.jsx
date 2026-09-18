@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Icon } from './common/Icon';
+import { useToast } from './common/Toast';
 
 export default function ProjectChat() {
   const { projectId } = useParams();
   const { token, logout, BACKEND_URL } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
 
   // State
   const [messages, setMessages] = useState([]);
@@ -260,6 +263,7 @@ export default function ProjectChat() {
   const handleCopy = (text, idx) => {
     navigator.clipboard.writeText(text);
     setCopiedIndex(idx);
+    toast.success('Response copied to clipboard');
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
@@ -280,20 +284,7 @@ export default function ProjectChat() {
             <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #94a3b8)' }}>
               Projects / {projectName || `Project #${projectId}`} /
             </span>
-            <span style={{ fontSize: '0.85rem', color: '#a855f7', fontWeight: 600 }}>AI Chat</span>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                background: 'rgba(168, 85, 247, 0.15)',
-                color: '#c084fc',
-                padding: '0.15rem 0.5rem',
-                borderRadius: '12px',
-                border: '1px solid rgba(168, 85, 247, 0.3)',
-                fontWeight: 600,
-              }}
-            >
-              Day 16: Grounded Chat
-            </span>
+            <span style={{ fontSize: '0.85rem', color: '#a855f7', fontWeight: 600 }}>AI Assistant Chat</span>
             {conversationId && (
               <span
                 style={{
@@ -311,10 +302,10 @@ export default function ProjectChat() {
             )}
           </div>
           <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary, #f8fafc)' }}>
-            CodeSage AI Chat
+            AI Assistant Chat
           </h1>
           <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary, #94a3b8)' }}>
-            Ask natural-language questions with project-grounded RAG answers and contextual follow-ups
+            Ask questions about your project and understand your code faster.
           </p>
         </div>
 
@@ -331,14 +322,14 @@ export default function ProjectChat() {
             className="btn btn-secondary btn-sm"
             id="chat-nav-search"
           >
-            Vector Search
+            <span>Search Code</span>
           </Link>
           <Link
             to={`/dashboard/projects/${projectId}/ask`}
             className="btn btn-secondary btn-sm"
             id="chat-nav-ask"
           >
-            Single Q&A
+            AI Assistant
           </Link>
           <Link
             to={`/dashboard/projects/${projectId}/explorer`}
@@ -368,11 +359,11 @@ export default function ProjectChat() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.1rem' }}>⚠️</span>
             <span style={{ fontSize: '0.85rem', color: '#fbbf24' }}>
-              Project vector index is not ready ({indexStatus.status}). Please build the FAISS index first for optimal answers.
+              Project search index is not ready. Please enable code search first for optimal answers.
             </span>
           </div>
           <Link to={`/dashboard/projects/${projectId}/search`} className="btn btn-secondary btn-sm" style={{ fontSize: '0.75rem' }}>
-            Build Index
+            Enable Search
           </Link>
         </div>
       )}
@@ -433,7 +424,7 @@ export default function ProjectChat() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
-            <span>Gemma 2B Grounded Chat</span>
+            <span>AI Assistant Active</span>
             <span>&bull;</span>
             <span>{conversationId ? `Session #${conversationId}` : 'New Session'}</span>
             <span>&bull;</span>
@@ -453,7 +444,7 @@ export default function ProjectChat() {
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: '#94a3b8' }}>
-              <label htmlFor="chat-topk">Retrieval:</label>
+              <label htmlFor="chat-topk">Context:</label>
               <select
                 id="chat-topk"
                 value={topK}
@@ -470,7 +461,7 @@ export default function ProjectChat() {
               >
                 {[3, 5, 7, 10].map((k) => (
                   <option key={k} value={k} style={{ background: '#0f172a' }}>
-                    {k} chunks
+                    {k} sources
                   </option>
                 ))}
               </select>
@@ -520,17 +511,17 @@ export default function ProjectChat() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '2rem',
+                  color: 'var(--primary-500)',
                   margin: '0 auto 1.25rem',
                 }}
               >
-                🤖
+                <Icon name="ai" size={32} />
               </div>
               <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f8fafc', marginBottom: '0.5rem' }}>
                 Ask anything about this project
               </h2>
               <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-                CodeSage AI searches your project code with FAISS and nomic embeddings, then generates accurate, grounded explanations with Gemma 2B.
+                CodeSage AI searches your project code and provides accurate, grounded explanations of your architecture and logic.
               </p>
 
               <div style={{ textAlign: 'left', marginBottom: '1rem' }}>
@@ -586,7 +577,6 @@ export default function ProjectChat() {
                   <span style={{ fontWeight: 600, color: msg.role === 'user' ? '#818cf8' : '#c084fc' }}>
                     {msg.role === 'user' ? 'You' : 'CodeSage AI'}
                   </span>
-                  {msg.model && <span>&bull; {msg.model}</span>}
                   {msg.timestamp && (
                     <span>&bull; {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   )}
@@ -628,7 +618,7 @@ export default function ProjectChat() {
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                         <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>
                           {msg.sources && msg.sources.length > 0
-                            ? `Retrieved Sources (${msg.sources.length})`
+                            ? `Sources (${msg.sources.length})`
                             : 'Grounded Analysis'}
                         </span>
                         <button
@@ -669,7 +659,7 @@ export default function ProjectChat() {
                                 }}
                                 title={`Open ${fp} in Code Explorer`}
                               >
-                                <span>📄</span>
+                                <Icon name="file" size={12} />
                                 <span>{fp}</span>
                               </Link>
                             ))}
@@ -755,11 +745,15 @@ export default function ProjectChat() {
                               borderRadius: '12px',
                               background: 'rgba(168, 85, 247, 0.08)',
                               border: '1px solid rgba(168, 85, 247, 0.25)',
-                              color: '#e9d5ff',
+                              color: 'var(--text-primary)',
                               cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
                             }}
                           >
-                            💬 {p}
+                            <Icon name="chat" size={12} />
+                            <span>{p}</span>
                           </button>
                         ))}
                       </div>
@@ -791,13 +785,13 @@ export default function ProjectChat() {
                 <div>
                   <div style={{ fontSize: '0.9rem', color: '#f8fafc', fontWeight: 500 }}>
                     {loadingStage === 'searching'
-                      ? 'Searching relevant project code with FAISS...'
-                      : 'Generating grounded answer with Gemma 2B...'}
+                      ? 'Finding relevant code in your project...'
+                      : 'Generating AI response...'}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                     {loadingStage === 'searching'
-                      ? 'Nomic Embed Text &bull; Contextual Query Enrichment &bull; Top-K Code Chunks'
-                      : 'LangChain RAG Chain &bull; Multi-turn Dialogue Context &bull; Source Citations'}
+                      ? 'Analyzing project files and code context'
+                      : 'Synthesizing answer with project code context'}
                   </div>
                 </div>
               </div>

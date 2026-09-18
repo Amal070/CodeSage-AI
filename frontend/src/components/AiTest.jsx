@@ -97,7 +97,7 @@ export default function AiTest() {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.detail || 'Failed to generate response from Gemma.');
+        throw new Error(data.detail || 'Failed to generate AI response.');
       }
 
       setResponse(data);
@@ -124,16 +124,13 @@ export default function AiTest() {
       <header className="analysis-header-card glass-card">
         <div className="analysis-header-left">
           <div className="crumb-tag font-mono" style={{ width: 'fit-content' }}>
-            Day 13 &bull; Ollama + Gemma Connection
+            AI Assistant
           </div>
           <h1 className="analysis-project-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
-            <span>AI Connection Test</span>
-            <span className="badge badge-purple font-mono" style={{ fontSize: '11px', padding: '2px 8px' }}>
-              Day 13
-            </span>
+            <span>AI Assistant</span>
           </h1>
           <p className="analysis-project-sub text-secondary font-mono" style={{ marginTop: '2px' }}>
-            Local LLM inference via Ollama and Google Gemma, connected through FastAPI backend
+            Ask questions about code and explore AI-powered software understanding.
           </p>
         </div>
 
@@ -144,7 +141,7 @@ export default function AiTest() {
             onClick={fetchHealth}
             disabled={loadingHealth}
             id="refresh-ai-health-btn"
-            title="Refresh Ollama & Gemma status"
+            title="Refresh AI service status"
           >
             <svg
               width="14"
@@ -168,7 +165,7 @@ export default function AiTest() {
 
       {/* Model & Daemon Health Cards (Phase 22) */}
       <div className="ai-metrics-grid">
-        {/* Card 1: Ollama Daemon Status */}
+        {/* Card 1: AI Service Status */}
         <div className="card glass-card ai-metric-card" id="ollama-status-card">
           <div className="ai-metric-icon cyan">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -179,7 +176,7 @@ export default function AiTest() {
             </svg>
           </div>
           <div className="ai-metric-content">
-            <span className="ai-metric-label font-mono">Ollama Daemon</span>
+            <span className="ai-metric-label font-mono">AI Service</span>
             <div className="ai-metric-value font-mono">
               {loadingHealth ? (
                 <span className="text-secondary font-mono text-sm animate-pulse">Checking...</span>
@@ -189,11 +186,11 @@ export default function AiTest() {
                 <span className="text-error font-bold" id="ollama-status-text">Unavailable</span>
               )}
             </div>
-            <span className="ai-metric-sub font-mono">http://localhost:11434</span>
+            <span className="ai-metric-sub font-mono">Ready for processing</span>
           </div>
         </div>
 
-        {/* Card 2: Gemma Model Status */}
+        {/* Card 2: AI Engine Status */}
         <div className="card glass-card ai-metric-card" id="gemma-status-card">
           <div className="ai-metric-icon purple">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -203,27 +200,27 @@ export default function AiTest() {
             </svg>
           </div>
           <div className="ai-metric-content">
-            <span className="ai-metric-label font-mono">Configured Model</span>
+            <span className="ai-metric-label font-mono">AI Assistant Engine</span>
             <div className="ai-metric-value font-mono">
               {loadingHealth ? (
                 <span className="text-secondary font-mono text-sm animate-pulse">Checking...</span>
               ) : isModelAvailable ? (
                 <span className="text-success font-bold" id="gemma-status-text">
-                  {health?.model?.name || 'gemma:2b'} Available
+                  Ready
                 </span>
               ) : (
                 <span className="text-warning font-bold" id="gemma-status-text">
-                  {health?.model?.name || 'gemma:2b'} Not Installed
+                  Initializing
                 </span>
               )}
             </div>
             <span className="ai-metric-sub font-mono">
-              {isModelAvailable ? 'Ready for inference' : 'Pull via ollama'}
+              {isModelAvailable ? 'Active & Ready' : 'Setting up'}
             </span>
           </div>
         </div>
 
-        {/* Card 3: Integration Layer */}
+        {/* Card 3: Security & Privacy */}
         <div className="card glass-card ai-metric-card" id="flow-card">
           <div className="ai-metric-icon emerald">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -231,11 +228,11 @@ export default function AiTest() {
             </svg>
           </div>
           <div className="ai-metric-content">
-            <span className="ai-metric-label font-mono">Integration Layer</span>
+            <span className="ai-metric-label font-mono">Data Privacy</span>
             <div className="ai-metric-value font-mono text-cyan" style={{ fontSize: '18px' }}>
-              FastAPI &rarr; Ollama
+              Private & Secure
             </div>
-            <span className="ai-metric-sub font-mono">Protected with JWT</span>
+            <span className="ai-metric-sub font-mono">Local execution</span>
           </div>
         </div>
       </div>
@@ -245,13 +242,13 @@ export default function AiTest() {
         <form onSubmit={handleSendPrompt} className="search-form" id="ai-test-form">
           <div style={{ width: '100%' }}>
             <label htmlFor="ai-prompt-input" className="font-mono text-xs text-secondary" style={{ display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Prompt to Gemma:
+              Ask AI Assistant:
             </label>
             <textarea
               id="ai-prompt-input"
               rows={4}
               className="ai-prompt-textarea font-mono"
-              placeholder="Ask Gemma something... (e.g. What is FastAPI?)"
+              placeholder="Ask anything about code or software architecture... (e.g. What is FastAPI? How does authentication work?)"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               disabled={generating}
@@ -300,7 +297,7 @@ export default function AiTest() {
               {generating ? (
                 <>
                   <div className="loading-spinner-sm" style={{ width: '16px', height: '16px' }}></div>
-                  <span>Gemma is thinking...</span>
+                  <span>Generating AI response...</span>
                 </>
               ) : (
                 <>
@@ -308,7 +305,7 @@ export default function AiTest() {
                     <line x1="22" y1="2" x2="11" y2="13"></line>
                     <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                   </svg>
-                  <span>Send to Gemma</span>
+                  <span>Ask AI Assistant</span>
                 </>
               )}
             </button>
@@ -355,9 +352,9 @@ export default function AiTest() {
       {generating && (
         <div className="glass-card search-loading-card animate-fade-in" id="ai-loading-state">
           <div className="loading-spinner-lg"></div>
-          <h3 className="search-state-title">Gemma is thinking...</h3>
+          <h3 className="search-state-title">Generating AI response...</h3>
           <p className="text-secondary font-mono text-sm">
-            Sending prompt via FastAPI to local Ollama &bull; Generating text response
+            Synthesizing explanation and code guidance
           </p>
         </div>
       )}
@@ -368,9 +365,9 @@ export default function AiTest() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span className="badge badge-purple font-mono" id="response-model-badge">
-                {response.model}
+                AI Assistant
               </span>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#f8fafc' }}>Gemma Response</h3>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#f8fafc' }}>AI Answer</h3>
             </div>
 
             <button

@@ -43,7 +43,7 @@ class OllamaService:
         if self._client is None:
             with self._lock:
                 if self._client is None:
-                    self._client = ollama.Client(host=self.base_url)
+                    self._client = ollama.Client(host=self.base_url, timeout=10.0)
         return self._client
 
     def is_model_installed(self, target_model: str, installed_models: list) -> bool:

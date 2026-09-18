@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useAuth } from '../context/AuthContext';
+import { Icon } from './common/Icon';
+import ThemeToggle from './common/ThemeToggle';
 import heroImg from '../assets/hero.png';
 
 export default function DashboardLayout() {
@@ -13,8 +15,16 @@ export default function DashboardLayout() {
   const getRouteTitle = () => {
     const path = location.pathname;
     if (path.includes('/projects')) return 'Projects';
-    if (path.includes('/profile')) return 'User Profile';
-    if (path.includes('/security')) return 'Security & Schema';
+    if (path.includes('/explorer')) return 'Code Explorer';
+    if (path.includes('/analysis')) return 'Project Analysis';
+    if (path.includes('/dependencies')) return 'Dependencies';
+    if (path.includes('/docs')) return 'Documentation';
+    if (path.includes('/export')) return 'Export';
+    if (path.includes('/settings')) return 'Settings';
+    if (path.includes('/profile')) return 'Profile';
+    if (path.includes('/security')) return 'Security';
+    if (path.includes('/api-docs')) return 'API Documentation';
+    if (path.includes('/ai')) return 'AI Assistant';
     return 'Dashboard';
   };
 
@@ -37,11 +47,7 @@ export default function DashboardLayout() {
             aria-label="Open sidebar menu"
             id="mobile-hamburger-btn"
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
+            <Icon name="dashboard" size={20} />
           </button>
           <div className="mobile-header-brand">
             <img src={heroImg} alt="CodeSage AI" className="mobile-brand-logo" />
@@ -51,6 +57,7 @@ export default function DashboardLayout() {
         </div>
 
         <div className="mobile-header-right">
+          <ThemeToggle className="mobile-theme-toggle" />
           <div className="mobile-user-avatar" title={user?.name || 'User'}>
             {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
           </div>
@@ -82,12 +89,11 @@ export default function DashboardLayout() {
 
           {/* Clean Dashboard Footer */}
           <footer className="dashboard-footer">
-            <p>CodeSage AI Platform &bull; Day 4 Dashboard &copy; 2026</p>
+            <p>CodeSage AI &bull; Intelligent Code Understanding Platform &copy; 2026</p>
             <div className="footer-links-row">
-              <span className="footer-dot-pill">FastAPI 0.140</span>
-              <span className="footer-dot-pill">React 19</span>
-              <span className="footer-dot-pill">JWT Bearer HS256</span>
-              <span className="footer-dot-pill">PostgreSQL</span>
+              <span className="footer-dot-pill">All Systems Operational</span>
+              <span className="footer-dot-pill">AI Assistant Active</span>
+              <span className="footer-dot-pill">Secure Session</span>
             </div>
           </footer>
         </main>

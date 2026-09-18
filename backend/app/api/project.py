@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, UploadFile, File, Query, HTTPException, status
+from fastapi import APIRouter, Depends, UploadFile, File, Query, HTTPException, status, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -32,9 +32,16 @@ from app.schemas.semantic_search import (
 from app.schemas.rag import RagRequest, RagResponse
 from app.schemas.chat import ChatRequest, ChatResponse, ChatHistoryItem
 from app.schemas.context_retrieval import ContextRetrievalRequest, ContextRetrievalResponse
+from app.schemas.function_doc import (
+    FunctionDocRequest,
+    FunctionListResponse,
+    FunctionDocResponse,
+)
 from app.services.chat_service import chat_service
 from app.services.faiss_service import faiss_service
 from app.services.context_retriever import context_retriever
+from app.services.function_doc_service import function_doc_service
+from app.services.export_service import export_service
 from app.services.project_service import (
     process_project_upload,
     get_user_projects,
@@ -609,4 +616,203 @@ def retrieve_project_context(
     )
 
 
+# ============================================================
+# Day 20 — AI Function Documentation Endpoints
+# ============================================================
 
+@router.get(
+    "/{project_id}/functions",
+    response_model=FunctionListResponse,
+    summary="List Functions & Methods Across Project",
+)
+def list_project_functions(
+    project_id: int,
+    file_path: Optional[str] = Query(None, description="Optional relative file path to filter functions"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Day 20 Function Listing Endpoint:
+    - Requires valid JWT authentication and project ownership.
+    - Discovers all functions/methods across the project using CodeChunk metadata or Tree-sitter AST.
+    - Supports optional `file_path` query parameter to filter functions in a specific file.
+    """
+    project = get_project_by_id(db, project_id, current_user.id)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found or you do not have permission to access it.",
+        )
+
+    return function_doc_service.list_project_functions(
+        db=db,
+        project=project,
+        file_path=file_path,
+    )
+
+
+@router.post(
+    "/{project_id}/functions/document",
+    response_model=FunctionDocResponse,
+    summary="Generate AI-Powered Documentation For Function",
+)
+def document_project_function(
+    project_id: int,
+    req: FunctionDocRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Day 20 Function Documentation Generation Endpoint:
+    - Requires valid JWT authentication and project ownership.
+    - Extracts function body, module preamble/imports, enclosing class, and bounded semantic neighbors.
+    - Does NOT send the entire project to the LLM.
+    - Generates grounded, professional Markdown documentation with all 10 required sections.
+    - Returns both complete Markdown and parsed structured fields.
+    """
+    project = get_project_by_id(db, project_id, current_user.id)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found or you do not have permission to access it.",
+        )
+
+    return function_doc_service.generate_function_doc(
+        db=db,
+        project=project,
+        request=req,
+    )
+
+
+@router.get(
+    "/{project_id}/export/markdown",
+    summary="Export Project Documentation in Markdown Format",
+)
+def export_project_markdown(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Day 22 Project Markdown Export Endpoint:
+    - Verifies JWT authentication and project tenancy.
+    - Generates clean, grounded Markdown report including overview, statistics,
+      languages, manifests, ASCII directory hierarchy, and functions catalog.
+    - Returns streaming file download with Content-Disposition header.
+    """
+    project = get_project_by_id(db, project_id, current_user.id)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found or you do not have permission to access it.",
+        )
+
+    md_content = export_service.generate_project_markdown(db=db, project=project)
+    safe_name = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in project.name)
+    filename = f"{safe_name}_Report.md"
+
+    return Response(
+        content=md_content.encode("utf-8"),
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get(
+    "/{project_id}/export/pdf",
+    summary="Export Project Documentation in PDF Format",
+)
+def export_project_pdf(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Day 22 Project PDF Export Endpoint:
+    - Verifies JWT authentication and project tenancy.
+    - Generates professional multi-page ReportLab PDF with dynamic 'Page X of Y' numbering,
+      running headers, metadata cards, colored tables, and syntax blocks.
+    - Returns binary application/pdf download with Content-Disposition header.
+    """
+    project = get_project_by_id(db, project_id, current_user.id)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found or you do not have permission to access it.",
+        )
+
+    pdf_bytes = export_service.generate_project_pdf(db=db, project=project)
+    safe_name = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in project.name)
+    filename = f"{safe_name}_Report.pdf"
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post(
+    "/{project_id}/functions/export/markdown",
+    summary="Export Function Documentation in Markdown Format",
+)
+def export_function_markdown(
+    project_id: int,
+    req: FunctionDocRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Day 22 Function Markdown Export Endpoint:
+    - Generates standalone Markdown documentation for an individual function.
+    - Returns text/markdown file download.
+    """
+    project = get_project_by_id(db, project_id, current_user.id)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found or you do not have permission to access it.",
+        )
+
+    md_content = export_service.generate_function_markdown(db=db, project=project, req=req)
+    safe_fn = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in req.function_name)
+    filename = f"{safe_fn}_doc.md"
+
+    return Response(
+        content=md_content.encode("utf-8"),
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post(
+    "/{project_id}/functions/export/pdf",
+    summary="Export Function Documentation in PDF Format",
+)
+def export_function_pdf(
+    project_id: int,
+    req: FunctionDocRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Day 22 Function PDF Export Endpoint:
+    - Generates styled standalone PDF documentation for an individual function.
+    - Returns binary application/pdf file download.
+    """
+    project = get_project_by_id(db, project_id, current_user.id)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found or you do not have permission to access it.",
+        )
+
+    pdf_bytes = export_service.generate_function_pdf(db=db, project=project, req=req)
+    safe_fn = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in req.function_name)
+    filename = f"{safe_fn}_doc.pdf"
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

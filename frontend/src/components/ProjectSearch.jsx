@@ -100,15 +100,15 @@ export default function ProjectSearch() {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.detail || 'Failed to build FAISS vector index.');
+        throw new Error(data.detail || 'Failed to prepare code search index.');
       }
 
       setBuildMessage(
-        `FAISS index built successfully: ${data.indexed_vectors} vectors indexed (${data.embedding_dimension}-dim, ${data.index_type}).`
+        `Search index updated successfully: ${data.indexed_vectors} code sections indexed.`
       );
       fetchIndexStatus();
     } catch (err) {
-      setBuildError(err.message || 'An error occurred while building the vector index.');
+      setBuildError(err.message || 'An error occurred while preparing the search index.');
     } finally {
       setBuildingIndex(false);
     }
@@ -177,16 +177,13 @@ export default function ProjectSearch() {
             <span className="breadcrumb-sep">/</span>
             <Link to={`/dashboard/projects/${projectId}`} className="breadcrumb-link">{projectName || `Project #${projectId}`}</Link>
             <span className="breadcrumb-sep">/</span>
-            <span className="breadcrumb-current text-purple">Semantic Search</span>
+            <span className="breadcrumb-current text-purple">Search Code</span>
           </div>
           <h1 className="analysis-project-name">
-            FAISS Semantic Code Retrieval
-            <span className="badge badge-purple font-mono" style={{ marginLeft: '12px', fontSize: '11px' }}>
-              Day 12
-            </span>
+            Search Your Code
           </h1>
           <p className="analysis-subtitle">
-            Natural-language semantic retrieval powered by Nomic Embed Text & FAISS IndexFlatIP
+            Search your project with natural language to find relevant code quickly.
           </p>
         </div>
 
@@ -258,25 +255,25 @@ export default function ProjectSearch() {
           </div>
           <div>
             <div className="indexing-title-row">
-              <h3 className="indexing-title">FAISS Vector Index</h3>
+              <h3 className="indexing-title">Code Search Status</h3>
               {loadingStatus ? (
                 <span className="badge badge-purple font-mono animate-pulse">Checking status...</span>
               ) : isIndexReady ? (
                 <span className="badge badge-success font-mono" id="vector-status-badge">
-                  Ready ({indexStatus.indexed_vectors} vectors &bull; {indexStatus.embedding_dimension || 768}-dim &bull; {indexStatus.index_type || 'IndexFlatIP'})
+                  Ready to search ({indexStatus.indexed_vectors} code sections indexed)
                 </span>
               ) : indexStatus?.status === 'stale' ? (
                 <span className="badge badge-warning font-mono" id="vector-status-badge">
-                  Index Stale ({indexStatus.indexed_vectors} indexed vs {indexStatus.embedded_chunks} embedded)
+                  Search Index Update Available ({indexStatus.indexed_vectors} indexed vs {indexStatus.embedded_chunks} prepared)
                 </span>
               ) : (
                 <span className="badge badge-warning font-mono" id="vector-status-badge">
-                  Index Not Built
+                  Search Index Not Ready
                 </span>
               )}
             </div>
             <p className="text-secondary font-mono text-xs" style={{ marginTop: '4px' }}>
-              Cosine similarity search using IndexFlatIP &bull; Normalized 768-dim query embeddings
+              Search functions, classes, and logic across your entire project.
             </p>
           </div>
         </div>
@@ -306,10 +303,10 @@ export default function ProjectSearch() {
             </svg>
             <span>
               {buildingIndex
-                ? 'Building FAISS Index...'
+                ? 'Preparing Code Search...'
                 : isIndexReady
-                ? 'Rebuild Vector Index'
-                : 'Build Vector Index'}
+                ? 'Update Search Index'
+                : 'Enable Code Search'}
             </span>
           </button>
         </div>
@@ -380,7 +377,7 @@ export default function ProjectSearch() {
           <div className="search-options-row">
             <div className="search-k-selector">
               <label htmlFor="top-k-select" className="search-k-label font-mono text-xs text-secondary">
-                Top-K:
+                Results:
               </label>
               <select
                 id="top-k-select"
@@ -389,11 +386,11 @@ export default function ProjectSearch() {
                 onChange={(e) => setTopK(e.target.value)}
                 disabled={searching}
               >
-                <option value="3">3 Chunks</option>
-                <option value="5">5 Chunks (Default)</option>
-                <option value="10">10 Chunks</option>
-                <option value="15">15 Chunks</option>
-                <option value="20">20 Chunks (Max)</option>
+                <option value="3">3 Results</option>
+                <option value="5">5 Results (Default)</option>
+                <option value="10">10 Results</option>
+                <option value="15">15 Results</option>
+                <option value="20">20 Results (Max)</option>
               </select>
             </div>
 
@@ -461,7 +458,7 @@ export default function ProjectSearch() {
                 style={{ marginTop: '10px' }}
                 onClick={triggerBuildIndex}
               >
-                Build Vector Index Now
+                Enable Code Search Now
               </button>
             )}
           </div>
@@ -474,7 +471,7 @@ export default function ProjectSearch() {
           <div className="loading-spinner-lg"></div>
           <h3 className="search-state-title">Searching code...</h3>
           <p className="text-secondary font-mono text-sm">
-            Embedding query with Nomic Embed Text &bull; Searching FAISS index
+            Finding relevant code sections in your project...
           </p>
         </div>
       )}
@@ -501,10 +498,10 @@ export default function ProjectSearch() {
         <section className="search-results-section animate-fade-in" id="search-results-list">
           <div className="results-header-row">
             <h2 className="results-heading font-mono">
-              Retrieved {searchResults.results.length} Relevant Code Chunks
+              Found {searchResults.results.length} Relevant Code Results
             </h2>
             <span className="results-query-summary font-mono text-xs text-secondary">
-              Query: &ldquo;{searchResults.query}&rdquo; &bull; Metric: {searchResults.metric}
+              Query: &ldquo;{searchResults.query}&rdquo;
             </span>
           </div>
 
@@ -549,9 +546,9 @@ export default function ProjectSearch() {
                         className={`result-score-pill font-mono text-xs ${
                           isVeryHigh ? 'score-high' : isMedium ? 'score-medium' : 'score-low'
                         }`}
-                        title="Cosine Similarity Score from FAISS IndexFlatIP"
+                        title="Relevance match"
                       >
-                        Similarity: {result.score.toFixed(4)} ({scorePercent}%)
+                        {isVeryHigh ? 'High Match' : isMedium ? 'Good Match' : 'Match'} ({scorePercent}%)
                       </span>
                     </div>
                   </div>

@@ -1,8 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Icon } from './common/Icon';
+import { useToast } from './common/Toast';
 
 export default function UserProfile() {
   const { user, token, authFetch } = useAuth();
+  const toast = useToast();
   const [refreshedProfile, setRefreshedProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [testResult, setTestResult] = useState(null);
@@ -90,6 +93,7 @@ export default function UserProfile() {
     if (token) {
       navigator.clipboard.writeText(token);
       setCopied(true);
+      toast.success('JWT token copied to clipboard');
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -114,7 +118,7 @@ export default function UserProfile() {
             <div className="name-badge-row">
               <h2 className="user-name-title">{profileData?.name || 'Loading Profile...'}</h2>
               <span className="pill-badge pill-success">Active Session</span>
-              <span className="pill-badge pill-purple">JWT HS256</span>
+              <span className="pill-badge pill-purple">Verified User</span>
             </div>
             <p className="user-email-subtitle">{profileData?.email || 'Loading...'}</p>
           </div>
@@ -130,16 +134,12 @@ export default function UserProfile() {
           >
             {loading ? (
               <span className="btn-loading-content">
-                <span className="spinner"></span> Verifying...
+                <span className="spinner"></span> Refreshing...
               </span>
             ) : (
               <span className="btn-content">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M23 4v6h-6"></path>
-                  <path d="M1 20v-6h6"></path>
-                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                </svg>
-                <span>Re-verify /api/auth/me</span>
+                <Icon name="refresh" size={14} />
+                <span>Refresh Profile</span>
               </span>
             )}
           </button>
@@ -171,16 +171,16 @@ export default function UserProfile() {
                 </svg>
               </div>
               <div>
-                <h3>User Account Record</h3>
-                <p className="card-desc">Retrieved from <code>GET /api/auth/me</code></p>
+                <h3>Account Profile</h3>
+                <p className="card-desc">Personal account information</p>
               </div>
             </div>
-            <span className="badge badge-success">PostgreSQL Synced</span>
+            <span className="badge badge-success">Active</span>
           </div>
 
           <div className="profile-field-list">
             <div className="field-item">
-              <span className="field-label">User ID (PK)</span>
+              <span className="field-label">Account ID</span>
               <span className="field-value font-mono" id="profile-user-id">#{profileData?.id || '--'}</span>
             </div>
             <div className="field-item">
@@ -192,21 +192,21 @@ export default function UserProfile() {
               <span className="field-value font-medium" id="profile-user-email">{profileData?.email || '--'}</span>
             </div>
             <div className="field-item">
-              <span className="field-label">Account Created At</span>
+              <span className="field-label">Member Since</span>
               <span className="field-value font-mono">
                 {profileData?.created_at
-                  ? new Date(profileData.created_at).toLocaleString()
+                  ? new Date(profileData.created_at).toLocaleDateString()
                   : '--'}
               </span>
             </div>
             <div className="field-item">
-              <span className="field-label">Authentication Method</span>
-              <span className="field-value font-mono text-emerald">Cryptographic Bearer Token</span>
+              <span className="field-label">Account Status</span>
+              <span className="field-value text-emerald">Active &amp; Verified</span>
             </div>
           </div>
         </div>
 
-        {/* JWT Token Details Card */}
+        {/* Session & Security Card */}
         <div className="card glass-card">
           <div className="card-header">
             <div className="card-title-group">
@@ -217,104 +217,102 @@ export default function UserProfile() {
                 </svg>
               </div>
               <div>
-                <h3>Active JWT Access Token</h3>
-                <p className="card-desc">Signed with HMAC-SHA256 Secret Key</p>
+                <h3>Session &amp; Security</h3>
+                <p className="card-desc">Authentication and security status</p>
               </div>
             </div>
-            <button
-              type="button"
-              className={`btn-copy ${copied ? 'copied' : ''}`}
-              onClick={copyToken}
-              id="copy-token-btn"
-            >
-              {copied ? (
-                <>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  <span>Copied!</span>
-                </>
-              ) : (
-                <>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
-                  <span>Copy Token</span>
-                </>
-              )}
-            </button>
+            <span className="badge badge-success">Encrypted</span>
           </div>
 
-          <div className="token-code-box">
-            <div className="token-type-pill">Authorization: Bearer</div>
-            <pre className="token-raw-string">
-              <code>{token || 'No active token'}</code>
-            </pre>
+          <div className="profile-field-list">
+            <div className="field-item">
+              <span className="field-label">Session Status</span>
+              <span className="field-value text-emerald font-medium">Active</span>
+            </div>
+            <div className="field-item">
+              <span className="field-label">Session Duration</span>
+              <span className="field-value font-mono text-emerald">
+                {decodedPayload ? formatExpiresIn(decodedPayload.exp) : 'Active'}
+              </span>
+            </div>
+            <div className="field-item">
+              <span className="field-label">Security Protocol</span>
+              <span className="field-value">Standard Secure Authentication</span>
+            </div>
           </div>
 
-          {decodedPayload && (
-            <div className="decoded-jwt-details">
-              <div className="jwt-metric">
-                <span className="jwt-metric-label">Subject ID</span>
-                <span className="jwt-metric-val font-mono">{decodedPayload.sub}</span>
+          {/* Developer / Advanced Token Details (Collapsible) */}
+          <details style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
+            <summary style={{ cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-secondary, #94a3b8)', userSelect: 'none' }}>
+              Advanced / Developer Token Details
+            </summary>
+            <div style={{ marginTop: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+                <button
+                  type="button"
+                  className={`btn-copy ${copied ? 'copied' : ''}`}
+                  onClick={copyToken}
+                  id="copy-token-btn"
+                >
+                  {copied ? '✓ Copied' : 'Copy Token'}
+                </button>
               </div>
-              <div className="jwt-metric">
-                <span className="jwt-metric-label">Email Claim</span>
-                <span className="jwt-metric-val">{decodedPayload.email}</span>
-              </div>
-              <div className="jwt-metric">
-                <span className="jwt-metric-label">Token Validity</span>
-                <span className="jwt-metric-val text-emerald font-mono">
-                  {formatExpiresIn(decodedPayload.exp)}
-                </span>
+              <div className="token-code-box">
+                <pre className="token-raw-string">
+                  <code>{token || 'No active token'}</code>
+                </pre>
               </div>
             </div>
-          )}
+          </details>
         </div>
       </div>
 
-      {/* Live API Tester / Inspector */}
+      {/* Live API Tester / Inspector (Developer Diagnostics) */}
       {testResult && (
-        <div className="card glass-card live-result-card animate-fade-in">
-          <div className="card-header">
-            <div className="card-title-group">
-              <div className={`card-icon ${testResult.success ? 'emerald' : 'rose'}`}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                </svg>
+        <details style={{ marginTop: '1.5rem' }}>
+          <summary style={{ cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-secondary, #94a3b8)', userSelect: 'none' }}>
+            Advanced / Developer Diagnostics
+          </summary>
+          <div className="card glass-card live-result-card animate-fade-in" style={{ marginTop: '0.75rem' }}>
+            <div className="card-header">
+              <div className="card-title-group">
+                <div className={`card-icon ${testResult.success ? 'emerald' : 'rose'}`}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                  </svg>
+                </div>
+                <div>
+                  <h3>Session Diagnostics — <code>GET /api/auth/me</code></h3>
+                  <p className="card-desc">Verified with backend authentication service</p>
+                </div>
               </div>
-              <div>
-                <h3>Protected Route Verification — <code>GET /api/auth/me</code></h3>
-                <p className="card-desc">Verified with FastAPI Bearer Token Dependency</p>
+              <div className="result-header-badges">
+                {testResult.duration !== null && (
+                  <span className="latency-badge">{testResult.duration}ms</span>
+                )}
+                <span className={`status-pill ${testResult.success ? 'success' : 'error'}`}>
+                  HTTP {testResult.status} {testResult.statusText}
+                </span>
               </div>
             </div>
-            <div className="result-header-badges">
-              {testResult.duration !== null && (
-                <span className="latency-badge">{testResult.duration}ms</span>
-              )}
-              <span className={`status-pill ${testResult.success ? 'success' : 'error'}`}>
-                HTTP {testResult.status} {testResult.statusText}
-              </span>
-            </div>
-          </div>
 
-          <div className="terminal-window">
-            <div className="terminal-header">
-              <div className="term-dots">
-                <span className="term-dot red"></span>
-                <span className="term-dot yellow"></span>
-                <span className="term-dot green"></span>
+            <div className="terminal-window">
+              <div className="terminal-header">
+                <div className="term-dots">
+                  <span className="term-dot red"></span>
+                  <span className="term-dot yellow"></span>
+                  <span className="term-dot green"></span>
+                </div>
+                <span className="term-title">
+                  Response Payload &bull; {testResult.timestamp}
+                </span>
               </div>
-              <span className="term-title">
-                Response Payload &bull; {testResult.timestamp}
-              </span>
+              <pre className="terminal-content">
+                <code>{JSON.stringify(testResult.data, null, 2)}</code>
+              </pre>
             </div>
-            <pre className="terminal-content">
-              <code>{JSON.stringify(testResult.data, null, 2)}</code>
-            </pre>
           </div>
-        </div>
+        </details>
       )}
     </div>
   );

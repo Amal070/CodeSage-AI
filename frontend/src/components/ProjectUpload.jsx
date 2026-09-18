@@ -1,10 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Icon } from './common/Icon';
+import Button from './common/Button';
+import { SkeletonCard } from './common/Skeleton';
+import { useToast } from './common/Toast';
 
 export default function ProjectUpload() {
   const { token, logout, BACKEND_URL } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const fileInputRef = useRef(null);
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -28,7 +33,7 @@ export default function ProjectUpload() {
   };
 
   // Fetch user's existing projects
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     if (!token) return;
     setLoadingProjects(true);
     try {
@@ -42,18 +47,18 @@ export default function ProjectUpload() {
       }
       if (res.ok) {
         const data = await res.json();
-        setProjects(data);
+        setProjects(Array.isArray(data) ? data : []);
       }
     } catch {
       // Non-blocking
     } finally {
       setLoadingProjects(false);
     }
-  };
+  }, [BACKEND_URL, token, logout, navigate]);
 
   useEffect(() => {
     fetchProjects();
-  }, [token]);
+  }, [fetchProjects]);
 
   // Handle file selection
   const handleFileSelect = (file) => {
@@ -64,13 +69,17 @@ export default function ProjectUpload() {
     if (!file) return;
 
     if (!file.name.toLowerCase().endsWith('.zip')) {
-      setErrorMessage('Only ZIP archives (.zip) are allowed. Please select a valid ZIP file.');
+      const err = 'Only ZIP archives (.zip) are allowed. Please select a valid ZIP file.';
+      setErrorMessage(err);
+      toast.error(err);
       setSelectedFile(null);
       return;
     }
 
     if (file.size === 0) {
-      setErrorMessage('The selected ZIP file is empty (0 bytes).');
+      const err = 'The selected ZIP file is empty (0 bytes).';
+      setErrorMessage(err);
+      toast.error(err);
       setSelectedFile(null);
       return;
     }
@@ -147,15 +156,20 @@ export default function ProjectUpload() {
           setUploadSuccess(true);
           setUploadedProject(response.project);
           setSelectedFile(null);
+          toast.success(`Project "${response.project.name}" uploaded and unpacked!`);
           if (fileInputRef.current) {
             fileInputRef.current.value = '';
           }
           fetchProjects();
         } catch {
-          setErrorMessage('Project uploaded, but failed to parse server response.');
+          const err = 'Project uploaded, but failed to parse server response.';
+          setErrorMessage(err);
+          toast.error(err);
         }
       } else if (xhr.status === 401) {
-        setErrorMessage('Your session has expired. Please log in again.');
+        const err = 'Your session has expired. Please log in again.';
+        setErrorMessage(err);
+        toast.error(err);
         logout();
         navigate('/login', { replace: true });
       } else {
@@ -165,18 +179,31 @@ export default function ProjectUpload() {
           if (res.detail) {
             errText = typeof res.detail === 'string' ? res.detail : JSON.stringify(res.detail);
           }
-        } catch {}
+        } catch {
+          // Ignore JSON parse error and use fallback error text
+        }
         setErrorMessage(errText);
+        toast.error(errText);
       }
       setUploading(false);
     };
 
     xhr.onerror = () => {
-      setErrorMessage('Network connection error occurred while uploading.');
+      const err = 'Network connection error occurred while uploading.';
+      setErrorMessage(err);
+      toast.error(err);
       setUploading(false);
     };
 
     xhr.send(formData);
+  };
+
+  // Contextual step message during upload
+  const getUploadStepMessage = () => {
+    if (uploadProgress < 40) return `Uploading project (${uploadProgress}%)...`;
+    if (uploadProgress < 75) return 'Analyzing project...';
+    if (uploadProgress < 100) return 'Preparing your project...';
+    return 'Ready ✓';
   };
 
   return (
@@ -185,32 +212,23 @@ export default function ProjectUpload() {
       <section className="upload-hero-banner glass-card">
         <div className="upload-hero-left">
           <div className="upload-icon-badge">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
+            <Icon name="upload" size={28} />
           </div>
           <div>
             <div className="upload-tag-row">
-              <span className="pill-badge pill-purple">Day 5 Active</span>
-              <span className="pill-badge pill-cyan">Repository Ingestion</span>
+              <span className="pill-badge pill-purple">Project Workspace</span>
+              <span className="pill-badge pill-cyan">ZIP Archive</span>
             </div>
             <h1 className="upload-page-title">Upload Your Project</h1>
             <p className="upload-page-subtitle">
-              Upload your codebase archive as a ZIP file to unpack, index files, and begin working with CodeSage AI.
+              Upload your project ZIP file and let CodeSage AI analyze it.
             </p>
           </div>
         </div>
 
         <div className="upload-hero-right">
           <Link to="/dashboard" className="btn btn-secondary btn-sm" id="upload-back-dashboard-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7"></rect>
-              <rect x="14" y="3" width="7" height="7"></rect>
-              <rect x="14" y="14" width="7" height="7"></rect>
-              <rect x="3" y="14" width="7" height="7"></rect>
-            </svg>
+            <Icon name="dashboard" size={14} />
             <span>Dashboard</span>
           </Link>
         </div>
@@ -222,11 +240,7 @@ export default function ProjectUpload() {
         {errorMessage && (
           <div className="auth-alert error animate-shake" role="alert">
             <div className="alert-icon-wrap">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-              </svg>
+              <Icon name="error" size={18} />
             </div>
             <div className="alert-text">
               <strong>Upload Error:</strong> {errorMessage}
@@ -237,7 +251,7 @@ export default function ProjectUpload() {
               onClick={() => setErrorMessage(null)}
               aria-label="Dismiss error"
             >
-              &times;
+              <Icon name="x" size={14} />
             </button>
           </div>
         )}
@@ -246,102 +260,90 @@ export default function ProjectUpload() {
         {uploadSuccess && uploadedProject && (
           <div className="upload-success-banner animate-fade-in">
             <div className="success-icon-wrap">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
+              <Icon name="check" size={24} />
             </div>
-            <div className="success-details">
-              <h3>Project Uploaded Successfully!</h3>
+            <div className="success-content">
+              <h3>Project Uploaded &amp; Ready!</h3>
               <p>
-                <strong>{uploadedProject.name}</strong> was safely unpacked into your workspace.
+                Repository <strong>{uploadedProject.name}</strong> was extracted successfully ({uploadedProject.file_count} files).
               </p>
-              <div className="success-meta-chips">
-                <span className="success-chip">
-                  <strong>Archive:</strong> {uploadedProject.original_filename}
-                </span>
-                <span className="success-chip">
-                  <strong>Files:</strong> {uploadedProject.file_count}
-                </span>
-                <span className="success-chip">
-                  <strong>Status:</strong> {uploadedProject.status}
-                </span>
+              <div className="success-actions-row">
+                <Link
+                  to={`/dashboard/projects/${uploadedProject.id}`}
+                  className="btn btn-primary btn-sm"
+                  id="view-analysis-after-upload-btn"
+                >
+                  <Icon name="analysis" size={14} />
+                  <span>Inspect Structure &amp; Analysis</span>
+                </Link>
+                <Link
+                  to={`/dashboard/projects/${uploadedProject.id}/explorer`}
+                  className="btn btn-secondary btn-sm"
+                  id="explore-code-after-upload-btn"
+                >
+                  <Icon name="files" size={14} />
+                  <span>Browse File Explorer</span>
+                </Link>
               </div>
-            </div>
-            <div className="success-actions">
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={() => setUploadSuccess(false)}
-                id="upload-another-btn"
-              >
-                Upload Another
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => navigate(`/dashboard/projects/${uploadedProject.id}`)}
-                id="success-open-explorer-btn"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                </svg>
-                <span>Open in Explorer</span>
-              </button>
             </div>
           </div>
         )}
 
-        {/* Drag & Drop Dropzone */}
+        {/* Dropzone Container */}
         <div
-          className={`upload-dropzone ${dragActive ? 'drag-active' : ''} ${selectedFile ? 'file-ready' : ''}`}
+          className={`upload-dropzone ${dragActive ? 'drag-active' : ''} ${selectedFile ? 'has-file' : ''}`}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
           onClick={() => {
-            if (!uploading && !selectedFile && fileInputRef.current) {
+            if (!selectedFile && !uploading && fileInputRef.current) {
               fileInputRef.current.click();
             }
           }}
+          id="project-dropzone"
         >
           <input
             ref={fileInputRef}
             type="file"
-            accept=".zip"
-            className="file-input-hidden"
+            accept=".zip,application/zip,application/x-zip-compressed"
             onChange={onFileInputChange}
-            disabled={uploading}
-            id="project-zip-input"
+            className="file-input-hidden"
+            id="project-file-input"
           />
 
           {!selectedFile ? (
-            <div className="dropzone-idle">
-              <div className="dropzone-icon-circle">
-                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
+            <div className="dropzone-idle-content">
+              <div className="dropzone-cloud-icon">
+                <Icon name="upload" size={40} />
               </div>
-              <h3 className="dropzone-title">Choose a ZIP project file</h3>
-              <p className="dropzone-hint">
-                Drag and drop your project ZIP here, or <span className="browse-text">browse files</span>
+              <h3 className="dropzone-title">
+                {dragActive ? 'Drop your ZIP archive here' : 'Drag & drop project ZIP archive here'}
+              </h3>
+              <p className="dropzone-sub">
+                Supports complete codebases including Python, JavaScript, TypeScript, Java, and C/C++.
               </p>
-              <div className="dropzone-requirements">
-                <span className="req-pill">Format: .zip only</span>
-                <span className="req-pill">Max size: 100 MB</span>
-                <span className="req-pill">Path traversal safe</span>
+              <div className="dropzone-badge-row">
+                <span className="filetype-badge font-mono">.ZIP ONLY</span>
+                <span className="filetype-badge font-mono">MAX 50MB</span>
               </div>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm dropzone-browse-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (fileInputRef.current) fileInputRef.current.click();
+                }}
+                id="browse-files-btn"
+              >
+                Browse Files
+              </button>
             </div>
           ) : (
-            <div className="dropzone-selected-file animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="dropzone-selected-content" onClick={(e) => e.stopPropagation()}>
               <div className="file-preview-card">
                 <div className="file-preview-icon">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                  </svg>
+                  <Icon name="folder" size={32} />
                 </div>
                 <div className="file-preview-meta">
                   <span className="file-preview-name font-mono" id="selected-file-name">
@@ -351,7 +353,7 @@ export default function ProjectUpload() {
                     <span className="file-preview-size font-mono" id="selected-file-size">
                       {formatFileSize(selectedFile.size)}
                     </span>
-                    <span className="file-status-tag">Ready for Ingestion</span>
+                    <span className="file-status-tag">Ready for Analysis</span>
                   </div>
                 </div>
 
@@ -363,10 +365,7 @@ export default function ProjectUpload() {
                     title="Remove selected file"
                     id="remove-selected-file-btn"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
+                    <Icon name="x" size={16} />
                   </button>
                 )}
               </div>
@@ -376,7 +375,7 @@ export default function ProjectUpload() {
                 <div className="upload-progress-wrap animate-fade-in">
                   <div className="progress-info-row">
                     <span className="progress-label">
-                      <span className="spinner"></span> Uploading project...
+                      <Icon name="spinner" size={14} className="animate-spin" /> {getUploadStepMessage()}
                     </span>
                     <span className="progress-percent font-mono" id="upload-progress-percent">
                       {uploadProgress}%
@@ -405,19 +404,17 @@ export default function ProjectUpload() {
                   >
                     Choose Different File
                   </button>
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-upload-submit"
+
+                  <Button
+                    variant="primary"
+                    loading={uploading}
+                    loadingText="Uploading..."
+                    icon="upload"
                     onClick={handleUpload}
                     id="upload-project-submit-btn"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                      <polyline points="17 8 12 3 7 8"></polyline>
-                      <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    <span>Upload Project</span>
-                  </button>
+                    Upload Project
+                  </Button>
                 </div>
               )}
             </div>
@@ -429,8 +426,8 @@ export default function ProjectUpload() {
       <section className="existing-projects-section">
         <div className="section-header-row">
           <div>
-            <h2 className="section-title">Your Workspaces &amp; Projects</h2>
-            <p className="section-desc">Uploaded projects persisted in PostgreSQL</p>
+            <h2 className="section-title">Your Projects</h2>
+            <p className="section-desc">Manage and explore your uploaded software projects</p>
           </div>
           <button
             type="button"
@@ -440,21 +437,20 @@ export default function ProjectUpload() {
             id="refresh-projects-btn"
             title="Refresh project list"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={loadingProjects ? 'animate-spin' : ''}>
-              <path d="M23 4v6h-6"></path>
-              <path d="M1 20v-6h6"></path>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-            </svg>
+            <Icon name="refresh" size={14} className={loadingProjects ? 'animate-spin' : ''} />
             <span>{loadingProjects ? 'Refreshing...' : 'Refresh'}</span>
           </button>
         </div>
 
-        {projects.length === 0 ? (
+        {loadingProjects ? (
+          <div className="projects-grid">
+            <SkeletonCard height="160px" />
+            <SkeletonCard height="160px" />
+          </div>
+        ) : projects.length === 0 ? (
           <div className="card glass-card empty-projects-card">
             <div className="empty-projects-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-              </svg>
+              <Icon name="folder" size={32} />
             </div>
             <h3>No projects uploaded yet</h3>
             <p>Upload a project ZIP file above to start analyzing code with CodeSage AI.</p>
@@ -466,9 +462,7 @@ export default function ProjectUpload() {
                 <div className="project-card-header">
                   <div className="project-card-title-wrap">
                     <div className="project-icon-box">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                      </svg>
+                      <Icon name="folder" size={20} />
                     </div>
                     <div>
                       <h3 className="project-record-name">{proj.name}</h3>
@@ -501,13 +495,8 @@ export default function ProjectUpload() {
                     className="btn btn-primary btn-sm btn-open-project"
                     id={`open-project-btn-${proj.id}`}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="7" height="7"></rect>
-                      <rect x="14" y="3" width="7" height="7"></rect>
-                      <rect x="14" y="14" width="7" height="7"></rect>
-                      <rect x="3" y="14" width="7" height="7"></rect>
-                    </svg>
-                    <span>Open Project</span>
+                    <Icon name="analysis" size={14} />
+                    <span>Analyze Project</span>
                   </Link>
                   <Link
                     to={`/dashboard/projects/${proj.id}/explorer`}
@@ -515,10 +504,7 @@ export default function ProjectUpload() {
                     id={`explore-code-btn-${proj.id}`}
                     title="Jump directly to File Explorer"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="16 18 22 12 16 6"></polyline>
-                      <polyline points="8 6 2 12 8 18"></polyline>
-                    </svg>
+                    <Icon name="code" size={14} />
                     <span>Explore Code</span>
                   </Link>
                 </div>
