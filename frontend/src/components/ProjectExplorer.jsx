@@ -75,6 +75,10 @@ export default function ProjectExplorer() {
       }
       const data = await res.json();
       setProject(data);
+      localStorage.setItem('codesage_active_project', String(projectId));
+      if (data.name) {
+        localStorage.setItem('codesage_active_project_name', data.name);
+      }
     } catch (err) {
       setProjectError(err.message || 'Failed to load project.');
     } finally {

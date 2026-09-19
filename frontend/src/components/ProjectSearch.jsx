@@ -48,7 +48,10 @@ export default function ProjectSearch() {
       }
       if (res.ok) {
         const data = await res.json();
-        setProjectName(data.name || `Project #${projectId}`);
+        const pName = data.name || `Project #${projectId}`;
+        setProjectName(pName);
+        localStorage.setItem('codesage_active_project', String(projectId));
+        localStorage.setItem('codesage_active_project_name', pName);
       }
     } catch {
       // ignore

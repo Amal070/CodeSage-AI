@@ -56,6 +56,8 @@ export default function App() {
             <Route path="dependencies" element={<ProjectFeatureRedirect subpath="dependencies" />} />
             <Route path="docs" element={<ProjectFeatureRedirect subpath="docs" />} />
             <Route path="search" element={<ProjectFeatureRedirect subpath="search" />} />
+            <Route path="chat" element={<ProjectFeatureRedirect subpath="chat" />} />
+            <Route path="ask" element={<ProjectFeatureRedirect subpath="chat" />} />
             <Route path="projects/:projectId" element={<ProjectAnalysis />} />
             <Route path="projects/:projectId/analysis" element={<ProjectAnalysis />} />
             <Route path="projects/:projectId/dependencies" element={<ProjectDependencies />} />
@@ -76,6 +78,12 @@ export default function App() {
 
           {/* Convenience Aliases */}
           <Route path="/ai" element={<Navigate to="/dashboard/ai" replace />} />
+          <Route path="/chat" element={<Navigate to="/dashboard/chat" replace />} />
+          <Route path="/search" element={<Navigate to="/dashboard/search" replace />} />
+          <Route path="/explorer" element={<Navigate to="/dashboard/explorer" replace />} />
+          <Route path="/analysis" element={<Navigate to="/dashboard/analysis" replace />} />
+          <Route path="/docs" element={<Navigate to="/dashboard/docs" replace />} />
+          <Route path="/dependencies" element={<Navigate to="/dashboard/dependencies" replace />} />
           <Route path="/api-docs" element={<Navigate to="/dashboard/api-docs" replace />} />
           <Route path="/projects" element={<Navigate to="/dashboard/projects" replace />} />
           <Route path="/projects/upload" element={<Navigate to="/dashboard/projects" replace />} />

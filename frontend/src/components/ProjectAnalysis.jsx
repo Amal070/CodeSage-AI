@@ -98,7 +98,11 @@ export default function ProjectAnalysis() {
 
       setAnalysisData(data);
 
-      // Auto-expand top-level folders in hierarchy
+      // Track active project across dashboard and sidebar
+      localStorage.setItem('codesage_active_project', String(projectId));
+      if (data.project_name) {
+        localStorage.setItem('codesage_active_project_name', data.project_name);
+      }
       const initialExpanded = new Set();
       if (data.folder_hierarchy && data.folder_hierarchy.children) {
         data.folder_hierarchy.children.forEach((child) => {
@@ -1258,31 +1262,31 @@ export default function ProjectAnalysis() {
           </div>
         )}
 
-        {/* Missing Embeddings Warning */}
+        {/* AI Preparation Warning */}
         {embeddingStatus?.status !== 'ready' && (embeddingStatus?.embedded_chunks || 0) === 0 && (
           <div className="indexing-empty-banner font-mono text-secondary text-sm">
-            Please generate embeddings before building the vector index.
+            Please prepare the project for AI before enabling code search.
           </div>
         )}
 
-        {/* Vector Index Details Strip */}
+        {/* Code Search Index Details Strip */}
         {vectorIndexStatus?.status === 'ready' && (
           <div className="indexing-stats-row font-mono text-secondary" id="vector-stats-strip">
             <div className="indexing-stat-pill">
-              <span className="stat-label">Indexed Vectors:</span>
+              <span className="stat-label">Searchable Sections:</span>
               <span className="stat-num text-purple font-bold">{vectorIndexStatus.indexed_vectors}</span>
             </div>
             <div className="indexing-stat-pill">
-              <span className="stat-label">Dimension:</span>
-              <span className="stat-num text-cyan font-bold">{vectorIndexStatus.embedding_dimension}</span>
+              <span className="stat-label">Search Engine:</span>
+              <span className="stat-num text-cyan font-bold">Fast Retrieval</span>
             </div>
             <div className="indexing-stat-pill">
-              <span className="stat-label">Index Type:</span>
-              <span className="stat-num text-emerald font-bold">{vectorIndexStatus.index_type || 'IndexFlatIP'}</span>
+              <span className="stat-label">Semantic Match:</span>
+              <span className="stat-num text-emerald font-bold">Ready</span>
             </div>
             <div className="indexing-stat-pill">
-              <span className="stat-label">Storage:</span>
-              <span className="stat-num text-success font-bold">storage/indexes/project_{projectId}</span>
+              <span className="stat-label">Index Status:</span>
+              <span className="stat-num text-success font-bold">Active</span>
             </div>
           </div>
         )}

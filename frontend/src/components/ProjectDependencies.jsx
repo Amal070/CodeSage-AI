@@ -42,6 +42,10 @@ export default function ProjectDependencies() {
       }
 
       setDepData(data);
+      localStorage.setItem('codesage_active_project', String(projectId));
+      if (data.project_name) {
+        localStorage.setItem('codesage_active_project_name', data.project_name);
+      }
     } catch (err) {
       setError(err.message || 'An unexpected error occurred while analyzing project dependencies.');
     } finally {

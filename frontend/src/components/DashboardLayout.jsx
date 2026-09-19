@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { Icon } from './common/Icon';
@@ -83,6 +83,55 @@ export default function DashboardLayout() {
 
         {/* Main Content Area */}
         <main className="dashboard-main-content">
+          {/* Professional Desktop Header */}
+          <header className="desktop-dashboard-header glass-nav" id="desktop-dashboard-header">
+            <div className="desktop-header-left">
+              <div className="desktop-breadcrumb">
+                <span className="breadcrumb-root">CodeSage AI</span>
+                <span className="breadcrumb-divider">/</span>
+                <span className="breadcrumb-current">{getRouteTitle()}</span>
+              </div>
+            </div>
+
+            <div className="desktop-header-center">
+              <Link to="/dashboard/search" className="header-search-box" id="header-global-search-btn">
+                <Icon name="search" size={15} />
+                <span className="header-search-placeholder">Search code, symbols, or functions...</span>
+                <kbd className="header-search-shortcut font-mono">⌘K</kbd>
+              </Link>
+            </div>
+
+            <div className="desktop-header-right">
+              <div className="header-status-pill" title="Platform and AI Services operational">
+                <span className="status-dot-mini connected"></span>
+                <span className="font-mono text-xs">Platform Ready</span>
+              </div>
+
+              <Link
+                to="/dashboard/projects"
+                className="btn btn-primary btn-sm header-upload-btn"
+                id="header-new-project-btn"
+              >
+                <Icon name="upload" size={14} />
+                <span>+ New Project</span>
+              </Link>
+
+              <ThemeToggle className="desktop-theme-toggle" />
+
+              <Link
+                to="/dashboard/profile"
+                className="desktop-user-profile-pill"
+                id="header-profile-link"
+                title={`Signed in as ${user?.name || 'User'}`}
+              >
+                <div className="desktop-user-avatar">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <span className="desktop-user-name">{user?.name || 'Profile'}</span>
+              </Link>
+            </div>
+          </header>
+
           <div className="dashboard-content-inner">
             <Outlet />
           </div>

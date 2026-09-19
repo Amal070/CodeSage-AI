@@ -51,6 +51,10 @@ export default function ProjectFunctionDoc() {
       if (res.ok) {
         const data = await res.json();
         setProject(data);
+        localStorage.setItem('codesage_active_project', String(projectId));
+        if (data.name) {
+          localStorage.setItem('codesage_active_project_name', data.name);
+        }
       }
     } catch {
       // ignore
